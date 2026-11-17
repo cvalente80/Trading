@@ -23,10 +23,12 @@ public final class ReplayBacktester {
             slippage < 0 || slippage >= 0.1) throw new IllegalArgumentException("Invalid backtest parameters");
         for (int i = 0; i < candles.size(); i++) {
             Candle c = candles.get(i);
-            if (c.open().signum() <= 0 || c.high().compareTo(c.low()) < 0 ||
+            if (c == null || c.openTime() == null || c.open() == null || c.high() == null ||
+                c.low() == null || c.close() == null || c.volume() == null || c.quoteVolume() == null ||
+                c.open().signum() <= 0 || c.high().compareTo(c.low()) < 0 ||
                 c.low().signum() <= 0 || c.high().compareTo(c.open()) < 0 ||
                 c.low().compareTo(c.open()) > 0 || c.high().compareTo(c.close()) < 0 ||
-                c.low().compareTo(c.close()) > 0 || (i > 0 &&
+                c.low().compareTo(c.close()) > 0 || c.volume().signum() < 0 || c.quoteVolume().signum() < 0 || (i > 0 &&
                 !c.openTime().isAfter(candles.get(i-1).openTime())))
                 throw new IllegalArgumentException("Invalid or unordered candle at index " + i);
         }
@@ -61,7 +63,9 @@ public final class ReplayBacktester {
                 if (atr > 0) {
                     double fill = open * (1 + slippage);
                     double distance = 2 * atr;
-                    double proposed = (cash * riskPercent / 100) / distance;
+                    double stopExecution = stop * (1 - slippage);
+                    double riskPerUnit = fill * (1 + fee) - stopExecution * (1 - fee);
+                    double proposed = (cash * riskPercent / 100) / riskPerUnit;
                     double affordable = cash / (fill * (1 + fee));
                     double candidate = Math.min(proposed, affordable);
                     if (candidate > 0 && Double.isFinite(candidate)) {
@@ -84,12 +88,17 @@ public final class ReplayBacktester {
                     }
                 }
             }
-            double equity = cash + qty * current.close().doubleValue();
+            double equity = cash + qty * current.close().doubleValue() * (1 - slippage) * (1 - fee);
             peak = Math.max(peak, equity);
             drawdown = Math.max(drawdown, 100 * (peak - equity) / peak);
+            if (qty > 0) {
+                double intrabarEquity = cash + qty * current.low().doubleValue() * (1 - slippage) * (1 - fee);
+                drawdown = Math.max(drawdown, 100 * (peak - intrabarEquity) / peak);
+            }
         }
         // Unrealized open position is marked to market, not counted as completed trade.
-        double finalEquity = cash + qty * candles.get(candles.size()-1).close().doubleValue();
+        double finalClose = candles.get(candles.size()-1).close().doubleValue();
+        double finalEquity = cash + qty * finalClose * (1 - slippage) * (1 - fee);
         double bh = 100 * (candles.get(candles.size()-1).close().doubleValue() /
             candles.get(0).close().doubleValue() - 1);
         return new Report(strategy.name(), candles.size(), initial, finalEquity,
