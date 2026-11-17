@@ -1,0 +1,30 @@
+server:
+  port: 8081
+spring:
+  application:
+    name: crypto-trading-lab
+  datasource:
+    url: jdbc:postgresql://localhost:5432/trading_lab
+    username: lab
+    password: lab_local_only
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  data:
+    redis:
+      host: localhost
+      port: 6378
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+lab:
+  portfolio:
+    initial-balance-usdt: 10000
+    risk-per-trade-percent: 1
+  trading:
+    mode: PAPER
+    market: SPOT
+    real-orders-enabled: false
