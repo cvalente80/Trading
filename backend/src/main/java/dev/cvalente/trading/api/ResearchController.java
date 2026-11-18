@@ -24,7 +24,9 @@ public class ResearchController {
         @RequestParam(defaultValue="0.001") double fee,
         @RequestParam(defaultValue="0.0005") double slippage) {
         String interval = strategy == StrategyType.DAY ? "15m" : "4h";
-        var report = ReplayBacktester.run(historyCandles.load(symbol, interval, candles).candles(),
+        var candleHistory = historyCandles.load(symbol, interval, candles);
+        if (!candleHistory.complete()) throw new IllegalArgumentException("Cannot backtest incomplete candle history");
+        var report = ReplayBacktester.run(candleHistory.candles(),
             strategy, 10000, 1, fee, slippage);
         Long id = history.save(symbol, interval, fee, slippage, report);
         return new SavedBacktest(id, report);

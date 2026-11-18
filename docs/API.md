@@ -21,5 +21,30 @@ Nota: Os endpoints de sinais, backtesting e paper portfolio descritos como futur
 - `GET /api/v1/research/backtests`: lista as últimas 50 simulações guardadas.
 - `GET /api/v1/research/backtests/{id}`: detalhes de uma simulação e respetivas operações.
 
+### Compatibilidade com o frontend
+
+O dashboard React consome os campos `id` e `report` de `/research/backtest`, e os
+campos `finalEquity`, `netReturnPercent`, `buyHoldPercent`, `completedTrades`,
+`winRatePercent`, `profitFactor`, `maxDrawdownPercent` e `totalFees` do relatório.
+Também consome `id`, `createdAt`, `symbol`, `strategy`, `netReturnPercent`,
+`completedTrades`, `maxDrawdownPercent` de `/research/backtests`.
+
+O frontend trata `profitFactor` não finito/indefinido como `Indefinido` e apresenta a
+mensagem `error` devolvida pela API quando o histórico está incompleto. O runtime
+obrigatório do frontend é Node.js 24.x, conforme `frontend/.nvmrc` e `package.json`.
+
+### Regras de execução e métricas (Fases 4–6)
+
+- O backtest usa apenas candles fechadas.
+- DAY exige uma série contínua de candles de 15 minutos; SWING exige candles de 4 horas.
+- Gaps, overlaps ou históricos incompletos impedem a execução de `/research/backtest` e devolvem `400` com um objeto `{ "error": "..." }`.
+- A entrada ocorre na abertura da candle seguinte ao sinal.
+- Stop loss e take profit são avaliados com dados OHLC. Se stop e target forem tocados na mesma candle, o stop tem prioridade conservadora.
+- Um gap abaixo do stop é executado na abertura da candle, com slippage adverso.
+- Um stop tocado sem gap é executado no preço do stop, com slippage adverso.
+- Posições abertas no fim são marcadas a mercado e não contam como trades concluídos.
+- `winRatePercent` considera apenas trades concluídos.
+- `profitFactor` é a soma dos ganhos brutos dividida pela soma das perdas brutas. Sem trades ou sem ganhos/perdas suficientes, a métrica pode ser indefinida; o frontend apresenta `Indefinido`.
+
 ## GET /api/v1/research/candles?symbol=BTCUSDT&interval=15m&limit=500
-Lê os candles fechados do PostgreSQL e descarrega apenas os intervalos em falta da API pública Binance. Retorna `candles`, `fetched`, `stored` e `complete`. Intervalos: `5m`, `15m`, `1h`, `4h`, `1d`; 70–10000 candles por pedido. Os backtests reutilizam o mesmo cache.
+Lê os candles fechados do PostgreSQL e descarrega apenas os intervalos em falta da API pública Binance. Retorna `candles`, `fetched`, `stored` e `complete`. `complete=true` só quando a quantidade, o primeiro timestamp e todos os intervalos esperados estão presentes. Intervalos: `5m`, `15m`, `1h`, `4h`, `1d`; 70–10000 candles por pedido. Os backtests reutilizam o mesmo cache e recusam históricos incompletos.

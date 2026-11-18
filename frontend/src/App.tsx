@@ -1,4 +1,5 @@
 import {useEffect, useState} from 'react';
+import {apiError, formatMetric, normalizeProfitFactor} from './metrics';
 
 type Config = {initialBalanceUsdt:number; riskPerTradePercent:number; mode:string; market:string; realOrdersEnabled:boolean; strategies:string[]};
 type Ticker = {symbol:string; lastPrice:string; quoteVolume:string; priceChangePercent:string};
@@ -10,7 +11,7 @@ export default function App() {
   const [error,setError] = useState('');
   const [symbol,setSymbol] = useState('BTCUSDT');
   const [strategy,setStrategy] = useState('DAY');
-  const [report,setReport] = useState<{finalEquity:number;netReturnPercent:number;buyHoldPercent:number;completedTrades:number;winRatePercent:number;profitFactor:number;maxDrawdownPercent:number;totalFees:number}|null>(null);
+  const [report,setReport] = useState<{finalEquity:number;netReturnPercent:number;buyHoldPercent:number;completedTrades:number;winRatePercent:number;profitFactor:number|null;maxDrawdownPercent:number;totalFees:number}|null>(null);
   const [busy,setBusy] = useState(false);
   type SavedRun = {id:number; createdAt:string; symbol:string; strategy:string; netReturnPercent:number; completedTrades:number; maxDrawdownPercent:number; finalEquity:number};
   const [history,setHistory] = useState<SavedRun[]>([]);
@@ -23,8 +24,10 @@ export default function App() {
     setBusy(true); setError(''); setReport(null);
     try {
       const response = await fetch(`${API}/research/backtest?symbol=${encodeURIComponent(symbol)}&strategy=${strategy}&candles=500`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const saved = await response.json(); setReport(saved.report); setSavedId(saved.id); await refreshHistory();
+      if (!response.ok) throw new Error(await apiError(response));
+      const saved = await response.json();
+      setReport({...saved.report, profitFactor: normalizeProfitFactor(saved.report?.profitFactor)});
+      setSavedId(saved.id); await refreshHistory();
     } catch (e) { setError(`Backtest indisponível: ${String(e)}`); }
     finally { setBusy(false); }
   }
@@ -51,14 +54,14 @@ export default function App() {
       </div>
       {savedId !== null && <p className="muted">Resultado guardado na base de dados: #{savedId}</p>}
       {report && <div className="metrics">
-        <div>Equity final<strong>{report.finalEquity.toFixed(2)} USDT</strong></div>
-        <div>Retorno líquido<strong>{report.netReturnPercent.toFixed(2)}%</strong></div>
-        <div>Buy & Hold<strong>{report.buyHoldPercent.toFixed(2)}%</strong></div>
+        <div>Equity final<strong>{formatMetric(report.finalEquity, 2, ' USDT')}</strong></div>
+        <div>Retorno líquido<strong>{formatMetric(report.netReturnPercent, 2, '%')}</strong></div>
+        <div>Buy & Hold<strong>{formatMetric(report.buyHoldPercent, 2, '%')}</strong></div>
         <div>Trades fechados<strong>{report.completedTrades}</strong></div>
-        <div>Win rate<strong>{report.winRatePercent.toFixed(1)}%</strong></div>
-        <div>Profit factor<strong>{report.profitFactor.toFixed(2)}</strong></div>
-        <div>Max drawdown<strong>{report.maxDrawdownPercent.toFixed(2)}%</strong></div>
-        <div>Comissões<strong>{report.totalFees.toFixed(2)} USDT</strong></div>
+        <div>Win rate<strong>{formatMetric(report.winRatePercent, 1, '%')}</strong></div>
+        <div>Profit factor<strong>{formatMetric(report.profitFactor)}</strong><small>Sem perdas ou sem trades</small></div>
+        <div>Max drawdown<strong>{formatMetric(report.maxDrawdownPercent, 2, '%')}</strong></div>
+        <div>Comissões<strong>{formatMetric(report.totalFees, 2, ' USDT')}</strong></div>
       </div>}
     </section>
     <section className="panel"><div className="panelhead"><div><h2>Histórico de backtests guardados</h2><p className="muted">Últimas 50 simulações persistidas no PostgreSQL</p></div><button onClick={refreshHistory}>Atualizar</button></div>

@@ -20,14 +20,28 @@ Não envia ordens reais. Não pede API keys. A Binance é usada apenas como font
 - Docker Compose
 
 ## Arranque
-Requisitos: JDK 25, Maven 3.9+, Docker Desktop/Engine e Node.js 22+.
+Requisitos: JDK 25, Maven 3.9+, Docker Desktop/Engine e Node.js 24.x (obrigatório).
+
+O frontend deve ser executado com Node 24. O ficheiro `frontend/.nvmrc` fixa a
+versão recomendada (`24.22.1`) e `frontend/package.json` rejeita versões fora de
+`>=24 <25`. Com nvm, executar `nvm use` dentro de `frontend/` antes dos comandos
+`npm install`, `npm test` ou `npm run build`.
 
 1. `docker compose up -d`
 2. `cd backend && mvn spring-boot:run`
 3. Noutro terminal: `cd frontend && npm install && npm run dev`
-4. Abrir `http://localhost:5173`
+4. Abrir `http://localhost:5174`
 
-Backend: `http://localhost:8080`
+Validação do frontend:
+
+```bash
+cd frontend
+nvm use
+npm test
+npm run build
+```
+
+Backend: `http://localhost:8081`
 - `GET /api/v1/lab/config`
 - `GET /api/v1/market/universe`
 
@@ -60,16 +74,22 @@ obtém candles **fechadas** da Binance e simula uma estratégia long-only EMA cr
 - Relatório com retorno líquido, buy-and-hold, trades, win rate, profit factor e drawdown.
 
 **Limitações relevantes:** um só par/posição por backtest, até 1000 candles por pedido,
-ATR como média simples do true range, sem volume/RSI no gatilho, sem persistência dos
-backtests, sem avaliação fora da amostra, sem paper broker em tempo real. A execução
-intrabar e os gaps são aproximados; não representam fills garantidos. Posições abertas
-no fim são marcadas a mercado, não liquidadas. Profit factor de 999999 indica lucro
-sem trades perdedores, não um valor estatístico robusto. Esta versão não é adequada
-para decidir investir dinheiro real.
+ATR como média simples do true range, sem volume/RSI no gatilho, sem avaliação fora da
+amostra e sem paper broker em tempo real. A execução intrabar usa uma política
+conservadora stop-first; gaps abaixo do stop são executados na abertura com slippage e
+não representam fills garantidos. Históricos com gaps ou incompletos são recusados.
+Posições abertas no fim são marcadas a mercado, não liquidadas. Win rate e profit factor
+consideram apenas trades concluídos; métricas indefinidas são apresentadas como
+`Indefinido` no frontend. Esta versão não é adequada para decidir investir dinheiro real.
 
-**Validação efetuada:** o motor de replay foi compilado com `javac` Java 21 e passou
-um teste de execução num mercado lateral sintético. O backend Spring Boot completo,
-o frontend e o Docker Compose ainda não foram validados neste ambiente.
+**Validação efetuada:** o backend possui testes JUnit para sizing, custos, execução de
+stops/targets/gaps, drawdown, métricas e integridade temporal/look-ahead. O frontend é
+validado com `npm run build`.
+
+O `ReplayBacktester` é o único motor usado pela API e pelo histórico persistido. O
+motor close-to-close original foi isolado em `backtest.legacy.LegacyBacktestEngine`
+apenas para preservar exemplos/testes didáticos; não deve ser usado para comparar
+resultados de investigação.
 
 ## v0.4 — Persistência de backtests
 
