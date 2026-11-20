@@ -51,6 +51,7 @@ public class CandleHistoryService {
         }
         List<Candle> candles=repo.findBySymbolAndIntervalAndOpenTimeGreaterThanEqualAndOpenTimeLessThanOrderByOpenTimeAsc(symbol,interval,start,exclusiveEnd)
             .stream().map(c->new Candle(c.openTime,c.open,c.high,c.low,c.close,c.volume,c.quoteVolume)).toList();
-        return new History(candles,fetched,repo.countBySymbolAndInterval(symbol,interval),candles.size()==limit);
+        boolean complete = CandleSeriesValidator.isComplete(candles, start, step, limit);
+        return new History(candles,fetched,repo.countBySymbolAndInterval(symbol,interval),complete);
     }
 }

@@ -40,8 +40,11 @@ public class BacktestHistoryService {
         for (ReplayBacktester.Trade t : report.trades()) {
             BacktestTradeEntity trade = new BacktestTradeEntity();
             trade.run = run; trade.entryIndex = t.entryIndex(); trade.exitIndex = t.exitIndex();
-            trade.entryPrice = t.entry(); trade.exitPrice = t.exit();
-            trade.quantity = t.quantity(); trade.netPnl = t.netPnl(); trade.reason = t.reason();
+            trade.entryTime = t.entryTime(); trade.exitTime = t.exitTime();
+            trade.entryPrice = t.entry(); trade.stopLoss = t.stopLoss(); trade.takeProfit = t.takeProfit();
+            trade.exitPrice = t.exit(); trade.quantity = t.quantity();
+            trade.entryFee = t.entryFee(); trade.exitFee = t.exitFee();
+            trade.netPnl = t.netPnl(); trade.reason = t.reason();
             trades.save(trade);
         }
         return run.id;
@@ -54,7 +57,10 @@ public class BacktestHistoryService {
     public RunDetails detail(Long id) {
         BacktestRunEntity run = runs.findById(id).orElseThrow(() -> new IllegalArgumentException("Backtest not found: " + id));
         var results = trades.findByRunIdOrderByEntryIndexAsc(id).stream().map(t ->
-            new ReplayBacktester.Trade(t.entryIndex,t.exitIndex,t.entryPrice,t.exitPrice,t.quantity,t.netPnl,t.reason)).toList();
+            new ReplayBacktester.Trade(t.entryIndex,t.exitIndex,t.entryTime,t.exitTime,t.entryPrice,
+                t.stopLoss == null ? 0 : t.stopLoss, t.takeProfit == null ? 0 : t.takeProfit,
+                t.exitPrice,t.quantity,t.entryFee == null ? 0 : t.entryFee,
+                t.exitFee == null ? 0 : t.exitFee,t.netPnl,t.reason)).toList();
         return new RunDetails(summary(run), results, run.note);
     }
 }
