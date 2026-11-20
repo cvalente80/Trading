@@ -12,8 +12,19 @@ import java.util.Optional;
 /** Educational, long-only, single-position replay. Decisions on closed bar, fills at next open. */
 public final class ReplayBacktester {
     private ReplayBacktester() {}
-    public record Trade(int entryIndex, int exitIndex, double entry, double exit,
-                        double quantity, double netPnl, String reason) {}
+    public record Trade(int entryIndex, int exitIndex, java.time.Instant entryTime,
+                        java.time.Instant exitTime, double entry, double stopLoss,
+                        double takeProfit, double exit, double quantity,
+                        double entryFee, double exitFee, double netPnl, String reason) {
+        public long durationSeconds() {
+            return entryTime == null || exitTime == null ? 0 : java.time.Duration.between(entryTime, exitTime).getSeconds();
+        }
+
+        /** JSON bean accessor for clients such as the React operation analysis. */
+        public long getDurationSeconds() {
+            return durationSeconds();
+        }
+    }
     public record Report(String strategy, int candles, double initialEquity, double finalEquity,
                          double netReturnPercent, double buyHoldPercent, int completedTrades,
                          double winRatePercent, double profitFactor, double maxDrawdownPercent,
@@ -40,7 +51,7 @@ public final class ReplayBacktester {
             ? BinancePublicMarketClient.intervalMillis("15m")
             : BinancePublicMarketClient.intervalMillis("4h");
         CandleSeriesValidator.validate(candles, expectedInterval);
-        double cash = initial, qty = 0, entry = 0, stop = 0, target = 0, entryCost = 0;
+        double cash = initial, qty = 0, entry = 0, stop = 0, target = 0, entryCost = 0, positionEntryFee = 0;
         int entryIndex = -1;
         double fees = 0;
         PerformanceMetrics.DrawdownTracker drawdown = new PerformanceMetrics.DrawdownTracker(initial);
@@ -60,7 +71,8 @@ public final class ReplayBacktester {
                     double gross = qty * exit, exitFee = gross * fee;
                     double pnl = gross - exitFee - entryCost;
                     cash += gross - exitFee; fees += exitFee;
-                    trades.add(new Trade(entryIndex, i, entry, exit, qty, pnl, reason));
+                    trades.add(new Trade(entryIndex, i, candles.get(entryIndex).openTime(), current.openTime(),
+                        entry, stop, target, exit, qty, positionEntryFee, exitFee, pnl, reason));
                     qty = 0;
                 }
             }
@@ -82,8 +94,8 @@ public final class ReplayBacktester {
                         qty = candidate; entry = fill; entryIndex = i;
                         target = fill + 2 * distance;
                         entryCost = qty * fill * (1 + fee);
-                        double entryFee = qty * fill * fee;
-                        fees += entryFee; cash -= entryCost;
+                        positionEntryFee = qty * fill * fee;
+                        fees += positionEntryFee; cash -= entryCost;
                         // Same bar may touch the stop. Conservative stop-first execution.
                         Optional<ExecutionModel.Exit> decision = ExecutionModel.entryBar(
                             open, current.low().doubleValue(), stop, slippage);
@@ -92,7 +104,8 @@ public final class ReplayBacktester {
                             double gross = qty * exit, exitFee = gross * fee;
                             double pnl = gross - exitFee - entryCost;
                             cash += gross - exitFee; fees += exitFee;
-                            trades.add(new Trade(entryIndex, i, entry, exit, qty, pnl, decision.get().reason()));
+                            trades.add(new Trade(entryIndex, i, candles.get(entryIndex).openTime(), current.openTime(),
+                                entry, stop, target, exit, qty, positionEntryFee, exitFee, pnl, decision.get().reason()));
                             qty = 0;
                         }
                     }

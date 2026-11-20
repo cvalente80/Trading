@@ -1,5 +1,6 @@
 import {useEffect, useState} from 'react';
 import {apiError, formatMetric, normalizeProfitFactor} from './metrics';
+import OperationAnalysis, {type Candle, type Operation} from './OperationAnalysis';
 
 type Config = {initialBalanceUsdt:number; riskPerTradePercent:number; mode:string; market:string; realOrdersEnabled:boolean; strategies:string[]};
 type Ticker = {symbol:string; lastPrice:string; quoteVolume:string; priceChangePercent:string};
@@ -16,6 +17,8 @@ export default function App() {
   type SavedRun = {id:number; createdAt:string; symbol:string; strategy:string; netReturnPercent:number; completedTrades:number; maxDrawdownPercent:number; finalEquity:number};
   const [history,setHistory] = useState<SavedRun[]>([]);
   const [savedId,setSavedId] = useState<number|null>(null);
+  const [operations,setOperations] = useState<Operation[]>([]);
+  const [candles,setCandles] = useState<Candle[]>([]);
   async function refreshHistory() {
     try {const r=await fetch(`${API}/research/backtests`); if(r.ok) setHistory(await r.json());} catch { /* backend may be offline */ }
   }
@@ -27,7 +30,11 @@ export default function App() {
       if (!response.ok) throw new Error(await apiError(response));
       const saved = await response.json();
       setReport({...saved.report, profitFactor: normalizeProfitFactor(saved.report?.profitFactor)});
-      setSavedId(saved.id); await refreshHistory();
+      setSavedId(saved.id);
+      const details = await fetch(`${API}/research/backtests/${saved.id}`).then(async r => r.ok ? r.json() : Promise.reject(new Error(await apiError(r))));
+      const summary = details.summary;
+      const candleData = await fetch(`${API}/research/candles?symbol=${summary.symbol}&interval=${summary.interval}&limit=${summary.candleCount}`).then(async r => r.ok ? r.json() : Promise.reject(new Error(await apiError(r))));
+      setOperations(details.trades ?? []); setCandles(candleData.candles ?? []); await refreshHistory();
     } catch (e) { setError(`Backtest indisponível: ${String(e)}`); }
     finally { setBusy(false); }
   }
@@ -45,6 +52,7 @@ export default function App() {
       <article><label>Mercado</label><strong>{config?.market ?? '—'}</strong></article>
       <article><label>Ordens reais</label><strong className="safe">{config?.realOrdersEnabled ? 'Ativadas' : 'Desativadas'}</strong></article>
     </section>
+    {report && <OperationAnalysis trades={operations} candles={candles} />}
     <section className="panel">
       <h2>Backtesting histórico</h2><p className="muted">500 candles fechadas da Binance. Resultados simulados, não são sinais em tempo real.</p>
       <div className="controls">

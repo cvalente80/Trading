@@ -21,6 +21,12 @@ Nota: Os endpoints de sinais, backtesting e paper portfolio descritos como futur
 - `GET /api/v1/research/backtests`: lista as últimas 50 simulações guardadas.
 - `GET /api/v1/research/backtests/{id}`: detalhes de uma simulação e respetivas operações.
 
+Cada operação no campo `trades` inclui `entryTime`, `exitTime`, `entry`, `stopLoss`,
+`takeProfit`, `exit`, `quantity`, `entryFee`, `exitFee`, `netPnl`, `reason` e
+`durationSeconds`, além dos índices das candles. O frontend usa estes dados para a
+secção **Análise de Operações** e os candles do endpoint `/research/candles` para
+desenhar os marcadores de entrada, saída, stop e target.
+
 ### Compatibilidade com o frontend
 
 O dashboard React consome os campos `id` e `report` de `/research/backtest`, e os
