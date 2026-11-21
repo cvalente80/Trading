@@ -177,6 +177,7 @@ public final class ReplayBacktester {
         }
         if (config.adxFilter() && adx(candles, end, 14) < config.minAdx()) return false;
         if (config.higherTimeframeTrend() && !higherTrend(candles, end, strategy)) return false;
+        if (config.avoidBearishRegime() && !higherTrend(candles, end, strategy)) return false;
         return true;
     }
 

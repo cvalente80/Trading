@@ -19,7 +19,7 @@ Nota: Os endpoints de sinais, backtesting e paper portfolio descritos como futur
 ## Persistência v0.4
 - `GET /api/v1/research/backtest`: executa e **guarda** a simulação. Parâmetros opcionais:
   `symbol`, `strategy=DAY|SWING`, `candles`, `fee`, `slippage`, `riskPercent`,
-  `higherTimeframeTrend`, `adxFilter`, `rsiFilter`, `volumeFilter`,
+  `higherTimeframeTrend`, `adxFilter`, `rsiFilter`, `volumeFilter`, `avoidBearishRegime`,
   `maxEmaDistancePercent`, `minAdx`, `minRsi` e `maxRsi`. O sizing recomendado é
   `riskPercent=0.25` ou `0.5`. Retorna `id` e `report`.
 - `GET /api/v1/research/backtests`: lista as últimas 50 simulações guardadas.
@@ -61,6 +61,7 @@ obrigatório do frontend é Node.js 24.x, conforme `frontend/.nvmrc` e `package.
 - `buyHoldPercent` e `randomBenchmarkPercent` usam o mesmo intervalo de candles do backtest. A estratégia aleatória é determinística (seed interno fixa) para permitir comparação reproduzível.
 - `expectancy` é o PnL líquido médio por trade concluído; `averageGain` e `averageLoss` são médias condicionais aos trades vencedores/perdedores. `averageDurationSeconds` é a duração média dos trades concluídos.
 - Os filtros são independentes e vêm desligados por defeito, exceto os controlos escolhidos pelo dashboard. `maxEmaDistancePercent` impede entradas quando o preço está demasiado afastado da EMA rápida.
+- `avoidBearishRegime=true` bloqueia novas entradas long quando a tendência agregada da timeframe superior é bearish. Não fecha posições existentes nem abre posições short.
 
 ## GET /api/v1/research/candles?symbol=BTCUSDT&interval=15m&limit=500
 Lê os candles fechados do PostgreSQL e descarrega apenas os intervalos em falta da API pública Binance. Retorna `candles`, `fetched`, `stored` e `complete`. `complete=true` só quando a quantidade, o primeiro timestamp e todos os intervalos esperados estão presentes. Intervalos: `5m`, `15m`, `1h`, `4h`, `1d`; 70–10000 candles por pedido. Os backtests reutilizam o mesmo cache e recusam históricos incompletos.

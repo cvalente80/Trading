@@ -76,5 +76,9 @@ Dashboard: `http://localhost:5174`
 
 Backend: `http://localhost:8081`
 
+O parâmetro `avoidBearishRegime=true` é a proteção long-only recomendada:
+bloqueia novas entradas durante regimes bearish, sem abrir posições short nem
+fechar automaticamente posições existentes.
+
 Não usar `docker compose down -v` salvo se for intencional apagar os dados
 persistidos do PostgreSQL.

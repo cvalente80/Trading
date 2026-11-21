@@ -2,6 +2,12 @@
 
 Data da última execução: 21 de novembro de 2026
 
+## Atualização desta execução
+
+Foi validada a funcionalidade `avoidBearishRegime`, que bloqueia novas entradas
+long durante regimes bearish sem abrir posições short nem fechar posições já
+existentes. A configuração foi integrada no endpoint de backtest e no dashboard.
+
 ## Backend
 
 Comando executado:
@@ -12,6 +18,8 @@ mvn -o -Daether.syncContext.named.factory=rwlock-local -q test
 ```
 
 Resultado: sucesso.
+
+A suite voltou a passar após a integração do filtro de regime bearish.
 
 A suite inclui testes para:
 
