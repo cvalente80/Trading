@@ -12,6 +12,10 @@ Foi também validada a configuração de trailing stop por ATR e saída temporal
 número máximo de candles, aplicada aos modos long e short e desativada por
 defeito para preservar a compatibilidade dos resultados anteriores.
 
+Foi adicionada e validada a fundação do paper broker: livro de ordens in-memory,
+ordens market/limit, fills determinísticos, cash, equity, posições e P&L realizado
+e não realizado. Os testes cobrem compra/venda, fees, fills limit e cancelamento.
+
 ## Atualização desta execução
 
 Foi validada a funcionalidade `avoidBearishRegime`, que bloqueia novas entradas

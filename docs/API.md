@@ -70,3 +70,12 @@ obrigatório do frontend é Node.js 24.x, conforme `frontend/.nvmrc` e `package.
 
 ## GET /api/v1/research/candles?symbol=BTCUSDT&interval=15m&limit=500
 Lê os candles fechados do PostgreSQL e descarrega apenas os intervalos em falta da API pública Binance. Retorna `candles`, `fetched`, `stored` e `complete`. `complete=true` só quando a quantidade, o primeiro timestamp e todos os intervalos esperados estão presentes. Intervalos: `5m`, `15m`, `1h`, `4h`, `1d`; 70–10000 candles por pedido. Os backtests reutilizam o mesmo cache e recusam históricos incompletos.
+
+## Paper broker
+
+- `GET /api/v1/paper/account`: cash, equity, P&L realizado/não realizado, posições, ordens abertas e fills.
+- `POST /api/v1/paper/orders`: cria uma ordem `MARKET` ou `LIMIT` com `symbol`, `side`, `quantity` e, para limit, `limitPrice`.
+- `DELETE /api/v1/paper/orders/{id}`: cancela uma ordem aberta.
+
+O broker é in-memory, spot-only e não envia ordens reais. Os fills são
+determinísticos quando alimentado com candles; a comissão predefinida é 0,1%.

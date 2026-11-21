@@ -19,8 +19,8 @@
 - [x] Relatório Day vs Swing e export CSV
 
 ## Entrega 2 — Paper broker
-- [ ] Livro de ordens e fills simulados
-- [ ] Equity/cash/positions e P&L realizado/não realizado
+- [x] Livro de ordens e fills simulados
+- [x] Equity/cash/positions e P&L realizado/não realizado
 - [ ] Regras de sizing com limites de notional e saldo
 - [ ] Diário imutável de decisões e sinais
 
