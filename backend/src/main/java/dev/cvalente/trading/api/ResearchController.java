@@ -69,4 +69,26 @@ public class ResearchController {
     public List<BacktestHistoryService.RunSummary> recent() { return history.recent(); }
     @GetMapping("/backtests/{id}")
     public BacktestHistoryService.RunDetails detail(@PathVariable Long id) { return history.detail(id); }
+
+    @GetMapping(value = "/backtests/{id}/trades.csv", produces = "text/csv")
+    public String tradesCsv(@PathVariable Long id) {
+        var details = history.detail(id);
+        StringBuilder csv = new StringBuilder("entryIndex,exitIndex,entryTime,exitTime,entry,stopLoss,takeProfit,exit,quantity,entryFee,exitFee,netPnl,reason,durationSeconds\n");
+        for (var trade : details.trades()) {
+            csv.append(trade.entryIndex()).append(',').append(trade.exitIndex()).append(',')
+                .append(value(trade.entryTime())).append(',').append(value(trade.exitTime())).append(',')
+                .append(trade.entry()).append(',').append(trade.stopLoss()).append(',').append(trade.takeProfit()).append(',')
+                .append(trade.exit()).append(',').append(trade.quantity()).append(',').append(trade.entryFee()).append(',')
+                .append(trade.exitFee()).append(',').append(trade.netPnl()).append(',')
+                .append(csvValue(trade.reason())).append(',').append(trade.durationSeconds()).append('\n');
+        }
+        return csv.toString();
+    }
+
+    private static String value(Object value) { return value == null ? "" : value.toString(); }
+    private static String csvValue(String value) {
+        if (value == null) return "";
+        return value.contains(",") || value.contains("\"") || value.contains("\n")
+            ? "\"" + value.replace("\"", "\"\"") + "\"" : value;
+    }
 }

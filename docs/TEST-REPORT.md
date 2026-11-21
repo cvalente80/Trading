@@ -4,6 +4,10 @@ Data da última execução: 21 de novembro de 2026
 
 Última reexecução após o modo combinado: backend e frontend passaram novamente.
 
+Foi validada a exportação CSV dos trades persistidos através de
+`/research/backtests/{id}/trades.csv`, incluindo teste HTTP do cabeçalho, dados
+do trade e duração.
+
 ## Atualização desta execução
 
 Foi validada a funcionalidade `avoidBearishRegime`, que bloqueia novas entradas

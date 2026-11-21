@@ -16,7 +16,7 @@
 - [ ] Backtest cronológico sem look-ahead
 - [ ] Fees, spread e slippage configuráveis
 - [ ] Stop, target, trailing stop e saída temporal
-- [ ] Relatório Day vs Swing e export CSV
+- [x] Relatório Day vs Swing e export CSV
 
 ## Entrega 2 — Paper broker
 - [ ] Livro de ordens e fills simulados

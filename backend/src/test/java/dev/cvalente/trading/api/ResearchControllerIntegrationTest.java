@@ -79,6 +79,20 @@ class ResearchControllerIntegrationTest {
             .andExpect(jsonPath("$.combined.strategy").value("DAY_LONG_SHORT"));
     }
 
+    @Test void tradesCsvEndpointReturnsHeaderAndTradeRows() throws Exception {
+        var trade = new ReplayBacktester.Trade(1, 2, Instant.EPOCH, Instant.ofEpochSecond(900),
+            100, 95, 110, 108, 1, .1, .1, 7.8, "BEARISH_CROSS");
+        var summary = new BacktestHistoryService.RunSummary(19L, Instant.EPOCH, "BTCUSDT", "DAY", "15m", 100,
+            .001, .0005, 10_000, 10_007.8, .078, 2, 1, 100, 2, 0, 0,
+            7.8, 7.8, 0, 900, 0, 0);
+        when(history.detail(19L)).thenReturn(new BacktestHistoryService.RunDetails(summary, List.of(trade), "note"));
+        mvc.perform(get("/api/v1/research/backtests/19/trades.csv"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentTypeCompatibleWith("text/csv"))
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("entryIndex,exitIndex")))
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("BEARISH_CROSS")));
+    }
+
     private static List<Candle> flatCandles(int count) {
         List<Candle> result = new ArrayList<>();
         for (int i = 0; i < count; i++) {

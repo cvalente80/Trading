@@ -24,6 +24,7 @@ Nota: Os endpoints de sinais, backtesting e paper portfolio descritos como futur
   `riskPercent=0.25` ou `0.5`. Retorna `id` e `report`.
 - `GET /api/v1/research/backtests`: lista as últimas 50 simulações guardadas.
 - `GET /api/v1/research/backtests/{id}`: detalhes de uma simulação e respetivas operações.
+- `GET /api/v1/research/backtests/{id}/trades.csv`: exporta os trades concluídos em CSV, incluindo índices, preços, custos, PnL, razão e duração.
 - `GET /api/v1/research/backtest/compare`: executa automaticamente long-only, short-only e uma carteira combinada 50/50. Aceita `symbol`, `strategy`, `candles`, `fee`, `slippage` e `riskPercent` e devolve os relatórios em `longOnly`, `shortOnly` e `combined`.
 
 Cada operação no campo `trades` inclui `entryTime`, `exitTime`, `entry`, `stopLoss`,

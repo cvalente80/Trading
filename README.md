@@ -117,6 +117,9 @@ O estado de validação desta entrega está registado em
 [`docs/TEST-REPORT.md`](docs/TEST-REPORT.md). Não interpretar os resultados como
 garantia de lucro.
 
+Os trades de qualquer backtest persistido podem ser exportados para análise
+externa através de `GET /api/v1/research/backtests/{id}/trades.csv`.
+
 ## Princípios de investigação
 1. Nunca otimizar e avaliar no mesmo período.
 2. Incluir fee, spread e slippage em todos os resultados.
