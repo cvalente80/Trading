@@ -14,10 +14,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 class PaperControllerIntegrationTest {
-    MockMvc mvc; PaperBroker broker; DecisionJournal journal;
+    MockMvc mvc; PaperBroker broker; DecisionJournal journal; PaperSignalService signals;
     @BeforeEach void setUp() {
         broker = mock(PaperBroker.class); journal = mock(DecisionJournal.class);
-        mvc = MockMvcBuilders.standaloneSetup(new PaperController(broker, journal)).build();
+        signals = mock(PaperSignalService.class);
+        mvc = MockMvcBuilders.standaloneSetup(new PaperController(broker, journal, signals)).build();
     }
     @Test void accountEndpointReturnsCashAndEquity() throws Exception {
         when(broker.snapshot()).thenReturn(new PaperAccount(bd(1000), bd(1000), BigDecimal.ZERO, BigDecimal.ZERO, List.of(), List.of(), List.of()));
@@ -41,6 +42,15 @@ class PaperControllerIntegrationTest {
         mvc.perform(post("/api/v1/paper/candles").contentType("application/json")
                 .content("{\"openTime\":\"1970-01-01T00:00:00Z\",\"open\":100,\"high\":101,\"low\":99,\"close\":100,\"volume\":10,\"quoteVolume\":1000}"))
             .andExpect(status().isOk()).andExpect(jsonPath("$.account.cash").value(1000));
+    }
+    @Test void signalEndpointExposesEvaluationResult() throws Exception {
+        var evaluation = new PaperSignalService.Evaluation(
+            new dev.cvalente.trading.domain.Signal("BTCUSDT", dev.cvalente.trading.domain.StrategyType.DAY,
+                "WATCH", 50, null, null, null, null, Instant.EPOCH, List.of("RSI")), null, null);
+        when(signals.evaluate(eq("BTCUSDT"), eq(dev.cvalente.trading.domain.StrategyType.DAY), anyList())).thenReturn(evaluation);
+        mvc.perform(post("/api/v1/paper/signals/evaluate").contentType("application/json")
+                .content("{\"symbol\":\"BTCUSDT\",\"strategy\":\"DAY\",\"candles\":[]}"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.signal.action").value("WATCH"));
     }
     private static BigDecimal bd(int value) { return BigDecimal.valueOf(value); }
 }

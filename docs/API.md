@@ -77,6 +77,7 @@ Lê os candles fechados do PostgreSQL e descarrega apenas os intervalos em falta
 - `POST /api/v1/paper/orders`: cria uma ordem `MARKET` ou `LIMIT` com `symbol`, `side`, `quantity` e, para limit, `limitPrice`.
 - `DELETE /api/v1/paper/orders/{id}`: cancela uma ordem aberta.
 - `POST /api/v1/paper/candles`: alimenta o broker com uma candle, executando ordens elegíveis e devolvendo fills e conta atualizada.
+- `POST /api/v1/paper/signals/evaluate`: avalia candles com o `SignalEngine`, regista a decisão e cria uma ordem market simulada para sinais BUY/saída bearish quando existe sizing válido.
 - `POST /api/v1/paper/decisions`: regista uma decisão/sinal com `symbol`, `strategy`, `action`, `score` e `reasons`.
 - `GET /api/v1/paper/decisions`: devolve as últimas 100 decisões persistidas.
 

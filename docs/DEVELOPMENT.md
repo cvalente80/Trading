@@ -97,3 +97,6 @@ persistidos do PostgreSQL.
 
 O endpoint `POST /api/v1/paper/candles` é o ponto de entrada do fluxo de candles
 para o Paper Broker: cada candle pode gerar fills e atualiza o estado persistido.
+O endpoint `POST /api/v1/paper/signals/evaluate` liga a decisão do
+`SignalEngine` à criação de ordens; a ordem só é executada quando uma candle
+posterior gera o fill.

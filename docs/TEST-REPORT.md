@@ -31,6 +31,10 @@ Foi adicionada recuperação do estado persistido na inicialização do broker,
 incluindo cash, ordens, fills e posições. O teste de reinício valida a
 continuidade dos IDs, saldo e livro de ordens aberto.
 
+Foi integrado o `SignalEngine` com o Paper Broker. Os testes HTTP cobrem o
+endpoint de avaliação; os testes de serviço confirmam que sinais são sempre
+registados e que sinais de entrada elegíveis criam ordens market simuladas.
+
 ## Atualização desta execução
 
 Foi validada a funcionalidade `avoidBearishRegime`, que bloqueia novas entradas

@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import dev.cvalente.trading.domain.Candle;
+import dev.cvalente.trading.domain.StrategyType;
 import java.util.List;
 
 @RestController
@@ -14,7 +15,8 @@ import java.util.List;
 public class PaperController {
     private final PaperBroker broker;
     private final DecisionJournal journal;
-    public PaperController(PaperBroker broker, DecisionJournal journal) { this.broker = broker; this.journal = journal; }
+    private final PaperSignalService signals;
+    public PaperController(PaperBroker broker, DecisionJournal journal, PaperSignalService signals) { this.broker = broker; this.journal = journal; this.signals = signals; }
     public record OrderRequest(String symbol, OrderSide side, OrderType type, BigDecimal quantity, BigDecimal limitPrice) {}
     @GetMapping("/account") public PaperAccount account() { return broker.snapshot(); }
     @PostMapping("/orders") public PaperOrder order(@RequestBody OrderRequest request) {
@@ -28,5 +30,9 @@ public class PaperController {
     @GetMapping("/decisions") public List<DecisionJournal.Entry> decisions() { return journal.recent(); }
     @PostMapping("/candles") public Map<String, Object> candle(@RequestBody Candle candle) {
         return Map.of("fills", broker.onCandle(candle), "account", broker.snapshot());
+    }
+    public record SignalRequest(String symbol, StrategyType strategy, List<Candle> candles) {}
+    @PostMapping("/signals/evaluate") public PaperSignalService.Evaluation evaluateSignal(@RequestBody SignalRequest request) {
+        return signals.evaluate(request.symbol(), request.strategy(), request.candles());
     }
 }
