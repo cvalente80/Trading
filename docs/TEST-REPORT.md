@@ -8,6 +8,10 @@ Foi validada a funcionalidade `avoidBearishRegime`, que bloqueia novas entradas
 long durante regimes bearish sem abrir posições short nem fechar posições já
 existentes. A configuração foi integrada no endpoint de backtest e no dashboard.
 
+Também foi validado o modo `enableShort=true`, com replay short-only, sizing por
+risco, stop/target ATR, custos, métricas e benchmarks partilhados com o modo
+long-only. O endpoint de backtest e o dashboard aceitam esta configuração.
+
 ## Backend
 
 Comando executado:
@@ -27,6 +31,7 @@ A suite inclui testes para:
 - custos, slippage e sweep de fees;
 - execução de stops, targets e gaps;
 - cruzamentos bullish e bearish;
+- replay short-only e seleção HTTP através de `enableShort=true`;
 - configuração e integração dos filtros de tendência, ADX, RSI, volume e distância à EMA;
 - métricas de expectancy, ganhos/perdas médios, duração e perdas consecutivas;
 - benchmarks buy-and-hold e aleatório determinístico;

@@ -10,6 +10,6 @@ class BacktestConfigTest {
 
     @Test void invalidEmaDistanceIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
-            new BacktestConfig(.5, .001, .0005, false, false, false, false, false, -1, 20, 45, 68));
+            new BacktestConfig(.5, .001, .0005, false, false, false, false, false, false, -1, 20, 45, 68));
     }
 }

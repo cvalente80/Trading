@@ -40,9 +40,10 @@ class ResearchControllerIntegrationTest {
                 .param("riskPercent", ".5").param("fee", ".001").param("slippage", ".0005")
                 .param("higherTimeframeTrend", "true").param("adxFilter", "true")
                 .param("rsiFilter", "true").param("volumeFilter", "true")
-                .param("maxEmaDistancePercent", "3"))
+                .param("maxEmaDistancePercent", "3").param("enableShort", "true"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.id").value(17))
+            .andExpect(jsonPath("$.report.strategy").value("DAY_SHORT"))
             .andExpect(jsonPath("$.report.expectancy").value(0))
             .andExpect(jsonPath("$.report.randomBenchmarkPercent").exists());
         verify(history).save(eq("BTCUSDT"), eq("15m"), eq(.001), eq(.0005), any());

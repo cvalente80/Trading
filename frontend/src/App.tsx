@@ -20,7 +20,7 @@ export default function App() {
   const [operations,setOperations] = useState<Operation[]>([]);
   const [candles,setCandles] = useState<Candle[]>([]);
   const [riskPercent,setRiskPercent] = useState(.5);
-  const [filters,setFilters] = useState({higherTimeframeTrend:false,adxFilter:false,rsiFilter:false,volumeFilter:false,avoidBearishRegime:true});
+  const [filters,setFilters] = useState({higherTimeframeTrend:false,adxFilter:false,rsiFilter:false,volumeFilter:false,avoidBearishRegime:true,enableShort:false});
   const [maxEmaDistancePercent,setMaxEmaDistancePercent] = useState(3);
   async function refreshHistory() {
     try {const r=await fetch(`${API}/research/backtests`); if(r.ok) setHistory(await r.json());} catch { /* backend may be offline */ }

@@ -80,5 +80,9 @@ O parâmetro `avoidBearishRegime=true` é a proteção long-only recomendada:
 bloqueia novas entradas durante regimes bearish, sem abrir posições short nem
 fechar automaticamente posições existentes.
 
+Para investigar a versão short, usar `enableShort=true` no endpoint de backtest.
+O modo short é separado do long-only e mantém o mesmo contrato de relatório,
+sizing por risco, custos e benchmarks.
+
 Não usar `docker compose down -v` salvo se for intencional apagar os dados
 persistidos do PostgreSQL.

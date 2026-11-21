@@ -30,6 +30,7 @@ public class ResearchController {
         @RequestParam(defaultValue="false") boolean rsiFilter,
         @RequestParam(defaultValue="false") boolean volumeFilter,
         @RequestParam(defaultValue="true") boolean avoidBearishRegime,
+        @RequestParam(defaultValue="false") boolean enableShort,
         @RequestParam(defaultValue="Infinity") double maxEmaDistancePercent,
         @RequestParam(defaultValue="20") double minAdx,
         @RequestParam(defaultValue="45") double minRsi,
@@ -38,8 +39,9 @@ public class ResearchController {
         var candleHistory = historyCandles.load(symbol, interval, candles);
         if (!candleHistory.complete()) throw new IllegalArgumentException("Cannot backtest incomplete candle history");
         var config = new BacktestConfig(riskPercent, fee, slippage, higherTimeframeTrend,
-            adxFilter, rsiFilter, volumeFilter, avoidBearishRegime, maxEmaDistancePercent, minAdx, minRsi, maxRsi);
-        var report = ReplayBacktester.run(candleHistory.candles(), strategy, 10000, config);
+            adxFilter, rsiFilter, volumeFilter, avoidBearishRegime, enableShort, maxEmaDistancePercent, minAdx, minRsi, maxRsi);
+        var report = enableShort ? dev.cvalente.trading.research.ShortReplayBacktester.run(candleHistory.candles(), strategy, 10000, config)
+            : ReplayBacktester.run(candleHistory.candles(), strategy, 10000, config);
         Long id = history.save(symbol, interval, fee, slippage, report);
         return new SavedBacktest(id, report);
     }

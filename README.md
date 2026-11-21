@@ -108,7 +108,9 @@ volume e distância máxima à EMA. Os relatórios incluem buy-and-hold, benchma
 aleatório determinístico, expectancy, médias de ganho/perda, duração média e
 perdas consecutivas. O endpoint e o dashboard permitem controlar o risco por
 operação, com opções recomendadas de 0,25% e 0,5%, e os custos de execução são
-parametrizáveis.
+parametrizáveis. Existe também um replay short-only ativável com `enableShort=true`,
+com sizing, stop/target ATR, custos, métricas e benchmarks equivalentes ao modo
+long-only.
 
 O estado de validação desta entrega está registado em
 [`docs/TEST-REPORT.md`](docs/TEST-REPORT.md). Não interpretar os resultados como

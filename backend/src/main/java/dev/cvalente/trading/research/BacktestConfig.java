@@ -5,6 +5,7 @@ public record BacktestConfig(double riskPercent, double fee, double slippage,
                              boolean higherTimeframeTrend, boolean adxFilter,
                              boolean rsiFilter, boolean volumeFilter,
                              boolean avoidBearishRegime,
+                             boolean enableShort,
                              double maxEmaDistancePercent, double minAdx,
                              double minRsi, double maxRsi) {
     public BacktestConfig {
@@ -15,7 +16,7 @@ public record BacktestConfig(double riskPercent, double fee, double slippage,
             throw new IllegalArgumentException("Invalid backtest configuration");
     }
     public static BacktestConfig defaults(double riskPercent, double fee, double slippage) {
-        return new BacktestConfig(riskPercent, fee, slippage, false, false, false, false, false, Double.POSITIVE_INFINITY, 20, 45, 68);
+        return new BacktestConfig(riskPercent, fee, slippage, false, false, false, false, false, false, Double.POSITIVE_INFINITY, 20, 45, 68);
     }
     public static BacktestConfig conservative(double fee, double slippage) {
         return defaults(.5, fee, slippage);
