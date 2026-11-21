@@ -88,5 +88,9 @@ Para comparar os três modos, usar `GET /api/v1/research/backtest/compare`. O mo
 combinado usa duas sleeves independentes de 50% do capital, evitando seleção
 retrospectiva do melhor resultado.
 
+Trailing stop e saída temporal são controlados por `trailingStopAtr` e
+`maxHoldingCandles`. Ambos vêm desativados (`0`) por defeito e aplicam-se aos
+replays long e short.
+
 Não usar `docker compose down -v` salvo se for intencional apagar os dados
 persistidos do PostgreSQL.

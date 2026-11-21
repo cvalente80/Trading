@@ -119,6 +119,8 @@ garantia de lucro.
 
 Os trades de qualquer backtest persistido podem ser exportados para análise
 externa através de `GET /api/v1/research/backtests/{id}/trades.csv`.
+Trailing stop e saída temporal estão disponíveis através dos parâmetros
+`trailingStopAtr` e `maxHoldingCandles`, ambos desativados por defeito.
 
 ## Princípios de investigação
 1. Nunca otimizar e avaliar no mesmo período.

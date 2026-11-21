@@ -8,6 +8,10 @@ Foi validada a exportação CSV dos trades persistidos através de
 `/research/backtests/{id}/trades.csv`, incluindo teste HTTP do cabeçalho, dados
 do trade e duração.
 
+Foi também validada a configuração de trailing stop por ATR e saída temporal por
+número máximo de candles, aplicada aos modos long e short e desativada por
+defeito para preservar a compatibilidade dos resultados anteriores.
+
 ## Atualização desta execução
 
 Foi validada a funcionalidade `avoidBearishRegime`, que bloqueia novas entradas

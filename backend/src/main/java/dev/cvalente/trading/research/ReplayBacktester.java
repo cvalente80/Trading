@@ -94,6 +94,18 @@ public final class ReplayBacktester {
                         entry, stop, target, exit, qty, positionEntryFee, exitFee, pnl, "BEARISH_CROSS"));
                     qty = 0;
                 }
+                if (qty > 0 && config.maxHoldingCandles() > 0 && i - entryIndex >= config.maxHoldingCandles()) {
+                    double exit = open * (1 - slippage), gross = qty * exit, exitFee = gross * fee;
+                    double pnl = gross - exitFee - entryCost;
+                    cash += gross - exitFee; fees += exitFee;
+                    trades.add(new Trade(entryIndex, i, candles.get(entryIndex).openTime(), current.openTime(), entry, stop,
+                        target, exit, qty, positionEntryFee, exitFee, pnl, "TIME_EXIT"));
+                    qty = 0;
+                }
+                if (qty > 0 && config.trailingStopAtr() > 0) {
+                    double trail = current.high().doubleValue() - config.trailingStopAtr() * atr(candles, i, 14);
+                    if (Double.isFinite(trail)) stop = Math.max(stop, trail);
+                }
             }
             // Signals depend exclusively on the previous closed bar (i-1).
             if (qty == 0 && i > 61 && eligibleEntry(candles, i - 1, strategy, config)) {

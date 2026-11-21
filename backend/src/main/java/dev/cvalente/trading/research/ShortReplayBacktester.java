@@ -37,6 +37,19 @@ public final class ShortReplayBacktester {
                         entry, stop, target, exit, -qty, entryFee, exitFee, pnl, reason));
                     qty = 0;
                 }
+                if (qty > 0 && config.maxHoldingCandles() > 0 && i - entryIndex >= config.maxHoldingCandles()) {
+                    double timeExit = open * (1 + config.slippage());
+                    double gross = qty * (entry - timeExit), exitFee = qty * timeExit * config.fee();
+                    double pnl = gross - exitFee - entryCost;
+                    cash += qty * entry + pnl; fees += exitFee;
+                    trades.add(new ReplayBacktester.Trade(entryIndex, i, candles.get(entryIndex).openTime(), current.openTime(),
+                        entry, stop, target, timeExit, -qty, entryFee, exitFee, pnl, "TIME_EXIT"));
+                    qty = 0;
+                }
+                if (qty > 0 && config.trailingStopAtr() > 0) {
+                    double trail = current.low().doubleValue() + config.trailingStopAtr() * atr(candles, i, 14);
+                    if (Double.isFinite(trail)) stop = Math.min(stop, trail);
+                }
             }
             if (qty == 0 && CrossoverSignalPolicy.decision(candles, i - 1, strategy) == CrossoverSignalPolicy.Decision.EXIT) {
                 double fill = open * (1 - config.slippage());

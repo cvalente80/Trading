@@ -15,7 +15,7 @@
 - [ ] Persistência de candles com chave (symbol, interval, open_time)
 - [ ] Backtest cronológico sem look-ahead
 - [ ] Fees, spread e slippage configuráveis
-- [ ] Stop, target, trailing stop e saída temporal
+- [x] Stop, target, trailing stop e saída temporal
 - [x] Relatório Day vs Swing e export CSV
 
 ## Entrega 2 — Paper broker

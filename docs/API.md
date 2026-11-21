@@ -20,7 +20,7 @@ Nota: Os endpoints de sinais, backtesting e paper portfolio descritos como futur
 - `GET /api/v1/research/backtest`: executa e **guarda** a simulação. Parâmetros opcionais:
   `symbol`, `strategy=DAY|SWING`, `candles`, `fee`, `slippage`, `riskPercent`,
   `higherTimeframeTrend`, `adxFilter`, `rsiFilter`, `volumeFilter`, `avoidBearishRegime`, `enableShort`,
-  `maxEmaDistancePercent`, `minAdx`, `minRsi` e `maxRsi`. O sizing recomendado é
+  `trailingStopAtr`, `maxHoldingCandles`, `maxEmaDistancePercent`, `minAdx`, `minRsi` e `maxRsi`. O sizing recomendado é
   `riskPercent=0.25` ou `0.5`. Retorna `id` e `report`.
 - `GET /api/v1/research/backtests`: lista as últimas 50 simulações guardadas.
 - `GET /api/v1/research/backtests/{id}`: detalhes de uma simulação e respetivas operações.
@@ -65,6 +65,7 @@ obrigatório do frontend é Node.js 24.x, conforme `frontend/.nvmrc` e `package.
 - Os filtros são independentes e vêm desligados por defeito, exceto os controlos escolhidos pelo dashboard. `maxEmaDistancePercent` impede entradas quando o preço está demasiado afastado da EMA rápida.
 - `avoidBearishRegime=true` bloqueia novas entradas long quando a tendência agregada da timeframe superior é bearish. Não fecha posições existentes nem abre posições short.
 - `enableShort=true` executa o replay short-only, com sizing por risco, stop/target ATR, custos, métricas e os mesmos benchmarks. Não combina posições long e short no mesmo replay.
+- `trailingStopAtr` ativa um trailing stop a `N` ATR do extremo favorável; `0` desativa. `maxHoldingCandles` força uma saída temporal após esse número de candles; `0` desativa.
 - `/backtest/compare` combina duas sleeves independentes, cada uma com metade do capital inicial. O resultado combinado agrega equity, trades, custos e métricas; não escolhe retrospectivamente a melhor estratégia.
 
 ## GET /api/v1/research/candles?symbol=BTCUSDT&interval=15m&limit=500
