@@ -40,6 +40,16 @@ para validar recuperação após reinício. Neste ambiente o teste direcionado f
 skipped porque o socket Docker não está acessível; com Docker disponível, o
 container PostgreSQL é iniciado e a persistência real é exercitada.
 
+Foi adicionada também `RedisKafkaContainersIT`, cobrindo Redis set/get e Kafka
+criação de tópico e round-trip de mensagem. Como o Docker socket continua
+indisponível neste ambiente, estes testes são skipped localmente e ficam prontos
+para execução completa no CI.
+
+As dependências Kafka/Testcontainers foram adicionadas e a suite backend normal
+continua a passar. A integração Redis/Kafka permanece skipped neste ambiente pela
+indisponibilidade do Docker socket; com Docker, `RedisKafkaContainersIT` executa
+Redis set/get e Kafka tópico/publicação/consumo reais.
+
 ## Atualização desta execução
 
 Foi validada a funcionalidade `avoidBearishRegime`, que bloqueia novas entradas

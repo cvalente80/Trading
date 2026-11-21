@@ -114,3 +114,15 @@ mvn -Dtest=PaperBrokerPostgresIT test
 
 Sem Docker, o teste é automaticamente marcado como skipped; a suite normal não
 falha por isso. Em CI, garantir que o runner tenha Docker disponível.
+
+## Integração Redis/Kafka com Testcontainers
+
+`RedisKafkaContainersIT` valida uma operação real de escrita/leitura no Redis e
+um round-trip de tópico/mensagem no Kafka:
+
+```bash
+cd backend
+mvn -Dtest=RedisKafkaContainersIT test
+```
+
+O teste requer Docker e usa Redis 8 e Kafka `confluentinc/cp-kafka:7.8.0`.
