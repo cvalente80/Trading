@@ -5,6 +5,9 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.time.Instant;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import dev.cvalente.trading.persistence.*;
+import java.util.List;
 
 class PaperBrokerTest {
     @Test void marketBuyAndSellTrackCashPositionAndPnl() {
@@ -45,6 +48,20 @@ class PaperBrokerTest {
         var broker = new PaperBroker(bd(100), bd("0"));
         broker.submit("BTCUSDT", OrderSide.BUY, OrderType.MARKET, bd(2), null, Instant.EPOCH);
         assertThrows(IllegalArgumentException.class, () -> broker.onCandle(candle(60, 0)));
+    }
+
+    @Test void persistedStateIsRestoredOnBrokerConstruction() {
+        var orders = mock(PaperOrderRepository.class); var fills = mock(PaperFillRepository.class);
+        var positions = mock(PaperPositionRepository.class); var accounts = mock(PaperAccountRepository.class);
+        var account = new PaperAccountEntity(); account.id = 1L; account.cash = bd(750);
+        var order = new PaperOrderEntity(); order.id = 4L; order.symbol = "BTCUSDT"; order.side = "BUY"; order.type = "LIMIT";
+        order.quantity = bd(1); order.limitPrice = bd(100); order.createdAt = Instant.EPOCH; order.status = "OPEN";
+        when(accounts.findById(1L)).thenReturn(java.util.Optional.of(account));
+        when(orders.findAll()).thenReturn(List.of(order)); when(fills.findAll()).thenReturn(List.of()); when(positions.findAll()).thenReturn(List.of());
+        var broker = new PaperBroker(orders, fills, positions, accounts);
+        assertEquals(750, broker.snapshot().cash().doubleValue(), 1e-9);
+        assertEquals(1, broker.snapshot().openOrders().size());
+        assertEquals(5, broker.submit("BTCUSDT", OrderSide.BUY, OrderType.LIMIT, bd(1), bd(90), Instant.EPOCH).id());
     }
 
     private static Candle candle(int close, long seconds) { return candle(close, seconds, close - 1); }

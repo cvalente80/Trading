@@ -22,27 +22,31 @@ public class PaperBroker {
     private final PaperOrderRepository orderRepository;
     private final PaperFillRepository fillRepository;
     private final PaperPositionRepository positionRepository;
+    private final PaperAccountRepository accountRepository;
     private BigDecimal cash;
     private long nextId = 1;
 
-    public PaperBroker() { this(new BigDecimal("10000"), new BigDecimal("0.001"), BigDecimal.ZERO, new BigDecimal("1E+1000"), null, null, null); }
+    public PaperBroker() { this(new BigDecimal("10000"), new BigDecimal("0.001"), BigDecimal.ZERO, new BigDecimal("1E+1000"), null, null, null, null); }
     public PaperBroker(BigDecimal initialCash, BigDecimal feeRate) {
-        this(initialCash, feeRate, BigDecimal.ZERO, new BigDecimal("1E+1000"), null, null, null);
+        this(initialCash, feeRate, BigDecimal.ZERO, new BigDecimal("1E+1000"), null, null, null, null);
     }
     public PaperBroker(BigDecimal initialCash, BigDecimal feeRate, BigDecimal minNotional, BigDecimal maxNotional) {
-        this(initialCash, feeRate, minNotional, maxNotional, null, null, null);
+        this(initialCash, feeRate, minNotional, maxNotional, null, null, null, null);
     }
     @Autowired
-    public PaperBroker(PaperOrderRepository orderRepository, PaperFillRepository fillRepository, PaperPositionRepository positionRepository) {
-        this(new BigDecimal("10000"), new BigDecimal("0.001"), BigDecimal.ZERO, new BigDecimal("1E+1000"), orderRepository, fillRepository, positionRepository);
+    public PaperBroker(PaperOrderRepository orderRepository, PaperFillRepository fillRepository, PaperPositionRepository positionRepository,
+                       PaperAccountRepository accountRepository) {
+        this(new BigDecimal("10000"), new BigDecimal("0.001"), BigDecimal.ZERO, new BigDecimal("1E+1000"), orderRepository, fillRepository, positionRepository, accountRepository);
+        restore();
     }
     private PaperBroker(BigDecimal initialCash, BigDecimal feeRate, BigDecimal minNotional, BigDecimal maxNotional,
-                        PaperOrderRepository orderRepository, PaperFillRepository fillRepository, PaperPositionRepository positionRepository) {
+                        PaperOrderRepository orderRepository, PaperFillRepository fillRepository, PaperPositionRepository positionRepository,
+                        PaperAccountRepository accountRepository) {
         if (initialCash == null || initialCash.signum() <= 0 || feeRate == null || feeRate.signum() < 0 || feeRate.compareTo(BigDecimal.ONE) >= 0 ||
             minNotional == null || minNotional.signum() < 0 || maxNotional == null || maxNotional.compareTo(minNotional) < 0)
             throw new IllegalArgumentException("Invalid paper broker configuration");
         this.cash = initialCash; this.feeRate = feeRate; this.minNotional = minNotional; this.maxNotional = maxNotional;
-        this.orderRepository = orderRepository; this.fillRepository = fillRepository; this.positionRepository = positionRepository;
+        this.orderRepository = orderRepository; this.fillRepository = fillRepository; this.positionRepository = positionRepository; this.accountRepository = accountRepository;
     }
 
     public synchronized PaperOrder submit(String symbol, OrderSide side, OrderType type, BigDecimal quantity,
@@ -54,6 +58,7 @@ public class PaperBroker {
         PaperOrder order = new PaperOrder(nextId++, symbol, side, type, quantity, limitPrice, now, "OPEN");
         orders.put(order.id(), order);
         persist(order);
+        persistCash();
         return order;
     }
 
@@ -78,6 +83,7 @@ public class PaperBroker {
         }
         for (MutablePosition position : positions.values()) position.markPrice = candle.close();
         persistPositions();
+        persistCash();
         return List.copyOf(created);
     }
 
@@ -133,6 +139,29 @@ public class PaperBroker {
             PaperPositionEntity entity = new PaperPositionEntity(); entity.symbol = position.symbol; entity.quantity = position.quantity;
             entity.averageEntry = position.average; entity.markPrice = position.markPrice; entity.realizedPnl = position.realized; positionRepository.save(entity);
         }
+    }
+
+    private void persistCash() {
+        if (accountRepository == null) return;
+        PaperAccountEntity entity = accountRepository.findById(1L).orElseGet(PaperAccountEntity::new);
+        entity.id = 1L; entity.cash = cash; accountRepository.save(entity);
+    }
+
+    private void restore() {
+        if (orderRepository == null) return;
+        accountRepository.findById(1L).ifPresent(entity -> cash = entity.cash);
+        orderRepository.findAll().forEach(entity -> {
+            PaperOrder order = new PaperOrder(entity.id, entity.symbol, OrderSide.valueOf(entity.side), OrderType.valueOf(entity.type),
+                entity.quantity, entity.limitPrice, entity.createdAt, entity.status);
+            orders.put(order.id(), order); nextId = Math.max(nextId, order.id() + 1);
+        });
+        fillRepository.findAll().forEach(entity -> fills.add(new PaperFill(entity.orderId, entity.symbol, OrderSide.valueOf(entity.side),
+            entity.quantity, entity.price, entity.fee, entity.fillTime)));
+        positionRepository.findAll().forEach(entity -> {
+            MutablePosition position = new MutablePosition(entity.symbol); position.quantity = entity.quantity;
+            position.average = entity.averageEntry; position.markPrice = entity.markPrice; position.realized = entity.realizedPnl;
+            positions.put(entity.symbol, position);
+        });
     }
 
     private static final class MutablePosition {

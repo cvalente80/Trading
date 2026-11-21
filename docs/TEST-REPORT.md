@@ -27,6 +27,10 @@ Foram adicionados testes HTTP do Paper Broker para conta, ordens, decisões e
 ingestão de candles. Ordens, fills e posições passaram a ser persistidos em
 PostgreSQL, e o endpoint de candles foi validado como ponto de execução de fills.
 
+Foi adicionada recuperação do estado persistido na inicialização do broker,
+incluindo cash, ordens, fills e posições. O teste de reinício valida a
+continuidade dos IDs, saldo e livro de ordens aberto.
+
 ## Atualização desta execução
 
 Foi validada a funcionalidade `avoidBearishRegime`, que bloqueia novas entradas
