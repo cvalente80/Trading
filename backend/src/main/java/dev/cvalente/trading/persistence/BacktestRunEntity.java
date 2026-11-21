@@ -24,12 +24,12 @@ public class BacktestRunEntity {
     public double profitFactor;
     public double maxDrawdownPercent;
     public double totalFees;
-    public double expectancy;
-    public double averageGain;
-    public double averageLoss;
-    public double averageDurationSeconds;
-    public int maxConsecutiveLosses;
-    public double randomBenchmarkPercent;
+    @Column(nullable=false, columnDefinition="double precision default 0") public double expectancy;
+    @Column(nullable=false, columnDefinition="double precision default 0") public double averageGain;
+    @Column(nullable=false, columnDefinition="double precision default 0") public double averageLoss;
+    @Column(nullable=false, columnDefinition="double precision default 0") public double averageDurationSeconds;
+    @Column(nullable=false, columnDefinition="integer default 0") public int maxConsecutiveLosses;
+    @Column(nullable=false, columnDefinition="double precision default 0") public double randomBenchmarkPercent;
     @Column(length=600) public String note;
     public BacktestRunEntity() {}
 }

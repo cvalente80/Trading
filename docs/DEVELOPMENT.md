@@ -95,6 +95,13 @@ replays long e short.
 Não usar `docker compose down -v` salvo se for intencional apagar os dados
 persistidos do PostgreSQL.
 
+Alterações aditivas ao schema devem ser feitas em
+`backend/src/main/resources/db/migration/` e ser idempotentes. A migração
+`V1__backtest_metrics_defaults.sql` adiciona as métricas de backtest com
+`DEFAULT 0`, evitando falhas ao tornar colunas novas `NOT NULL` em bases já
+existentes. Em produção, executar migrações versionadas antes de usar
+`ddl-auto=validate`.
+
 O endpoint `POST /api/v1/paper/candles` é o ponto de entrada do fluxo de candles
 para o Paper Broker: cada candle pode gerar fills e atualiza o estado persistido.
 O endpoint `POST /api/v1/paper/signals/evaluate` liga a decisão do

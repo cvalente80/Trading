@@ -54,6 +54,12 @@ Após esta integração, a suite backend normal e a suite frontend foram executa
 novamente com sucesso; o teste multi-container permanece condicionado à
 disponibilidade do Docker.
 
+Foi aplicada a migração segura `V1__backtest_metrics_defaults.sql` para as novas
+colunas de métricas de `backtest_runs`, usando `IF NOT EXISTS` e `DEFAULT 0`.
+Após reiniciar o backend, os avisos Hibernate de colunas `NOT NULL` sem valor
+desapareceram. O fluxo HTTP do Paper Broker foi verificado novamente: ordem limit,
+fill por candle, cash, equity, posição, P&L e recuperação persistida funcionaram.
+
 As dependências Kafka/Testcontainers foram adicionadas e a suite backend normal
 continua a passar. A integração Redis/Kafka permanece skipped neste ambiente pela
 indisponibilidade do Docker socket; com Docker, `RedisKafkaContainersIT` executa
