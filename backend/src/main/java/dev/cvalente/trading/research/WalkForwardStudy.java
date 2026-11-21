@@ -26,10 +26,15 @@ public final class WalkForwardStudy {
     public static List<ReplayBacktester.Report> evaluate(Window window, StrategyType strategy,
                                                          double initial, double riskPercent,
                                                          double fee, double slippage) {
+        return evaluate(window, strategy, initial, BacktestConfig.defaults(riskPercent, fee, slippage));
+    }
+
+    public static List<ReplayBacktester.Report> evaluate(Window window, StrategyType strategy,
+                                                         double initial, BacktestConfig config) {
         List<ReplayBacktester.Report> reports = new ArrayList<>();
         for (List<Candle> period : List.of(window.train(), window.validation(), window.outOfSample())) {
             if (period.size() < 70) throw new IllegalArgumentException("Each walk-forward period needs 70 candles");
-            reports.add(ReplayBacktester.run(period, strategy, initial, riskPercent, fee, slippage));
+            reports.add(ReplayBacktester.run(period, strategy, initial, config));
         }
         return List.copyOf(reports);
     }
