@@ -110,7 +110,8 @@ perdas consecutivas. O endpoint e o dashboard permitem controlar o risco por
 operação, com opções recomendadas de 0,25% e 0,5%, e os custos de execução são
 parametrizáveis. Existe também um replay short-only ativável com `enableShort=true`,
 com sizing, stop/target ATR, custos, métricas e benchmarks equivalentes ao modo
-long-only.
+long-only. O endpoint `/api/v1/research/backtest/compare` compara automaticamente
+long-only, short-only e uma carteira combinada 50/50.
 
 O estado de validação desta entrega está registado em
 [`docs/TEST-REPORT.md`](docs/TEST-REPORT.md). Não interpretar os resultados como

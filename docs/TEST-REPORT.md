@@ -2,6 +2,8 @@
 
 Data da última execução: 21 de novembro de 2026
 
+Última reexecução após o modo combinado: backend e frontend passaram novamente.
+
 ## Atualização desta execução
 
 Foi validada a funcionalidade `avoidBearishRegime`, que bloqueia novas entradas
@@ -11,6 +13,10 @@ existentes. A configuração foi integrada no endpoint de backtest e no dashboar
 Também foi validado o modo `enableShort=true`, com replay short-only, sizing por
 risco, stop/target ATR, custos, métricas e benchmarks partilhados com o modo
 long-only. O endpoint de backtest e o dashboard aceitam esta configuração.
+
+Foi ainda validado o endpoint `/research/backtest/compare`, que devolve os
+relatórios long-only, short-only e combinado. O combinado usa duas sleeves de
+50% do capital e agrega trades, equity, custos, métricas e benchmarks.
 
 ## Backend
 
@@ -32,6 +38,7 @@ A suite inclui testes para:
 - execução de stops, targets e gaps;
 - cruzamentos bullish e bearish;
 - replay short-only e seleção HTTP através de `enableShort=true`;
+- comparação HTTP automática entre long-only, short-only e long/short 50/50;
 - configuração e integração dos filtros de tendência, ADX, RSI, volume e distância à EMA;
 - métricas de expectancy, ganhos/perdas médios, duração e perdas consecutivas;
 - benchmarks buy-and-hold e aleatório determinístico;

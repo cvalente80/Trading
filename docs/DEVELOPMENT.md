@@ -84,5 +84,9 @@ Para investigar a versão short, usar `enableShort=true` no endpoint de backtest
 O modo short é separado do long-only e mantém o mesmo contrato de relatório,
 sizing por risco, custos e benchmarks.
 
+Para comparar os três modos, usar `GET /api/v1/research/backtest/compare`. O modo
+combinado usa duas sleeves independentes de 50% do capital, evitando seleção
+retrospectiva do melhor resultado.
+
 Não usar `docker compose down -v` salvo se for intencional apagar os dados
 persistidos do PostgreSQL.

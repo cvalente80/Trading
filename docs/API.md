@@ -24,6 +24,7 @@ Nota: Os endpoints de sinais, backtesting e paper portfolio descritos como futur
   `riskPercent=0.25` ou `0.5`. Retorna `id` e `report`.
 - `GET /api/v1/research/backtests`: lista as últimas 50 simulações guardadas.
 - `GET /api/v1/research/backtests/{id}`: detalhes de uma simulação e respetivas operações.
+- `GET /api/v1/research/backtest/compare`: executa automaticamente long-only, short-only e uma carteira combinada 50/50. Aceita `symbol`, `strategy`, `candles`, `fee`, `slippage` e `riskPercent` e devolve os relatórios em `longOnly`, `shortOnly` e `combined`.
 
 Cada operação no campo `trades` inclui `entryTime`, `exitTime`, `entry`, `stopLoss`,
 `takeProfit`, `exit`, `quantity`, `entryFee`, `exitFee`, `netPnl`, `reason` e
@@ -63,6 +64,7 @@ obrigatório do frontend é Node.js 24.x, conforme `frontend/.nvmrc` e `package.
 - Os filtros são independentes e vêm desligados por defeito, exceto os controlos escolhidos pelo dashboard. `maxEmaDistancePercent` impede entradas quando o preço está demasiado afastado da EMA rápida.
 - `avoidBearishRegime=true` bloqueia novas entradas long quando a tendência agregada da timeframe superior é bearish. Não fecha posições existentes nem abre posições short.
 - `enableShort=true` executa o replay short-only, com sizing por risco, stop/target ATR, custos, métricas e os mesmos benchmarks. Não combina posições long e short no mesmo replay.
+- `/backtest/compare` combina duas sleeves independentes, cada uma com metade do capital inicial. O resultado combinado agrega equity, trades, custos e métricas; não escolhe retrospectivamente a melhor estratégia.
 
 ## GET /api/v1/research/candles?symbol=BTCUSDT&interval=15m&limit=500
 Lê os candles fechados do PostgreSQL e descarrega apenas os intervalos em falta da API pública Binance. Retorna `candles`, `fetched`, `stored` e `complete`. `complete=true` só quando a quantidade, o primeiro timestamp e todos os intervalos esperados estão presentes. Intervalos: `5m`, `15m`, `1h`, `4h`, `1d`; 70–10000 candles por pedido. Os backtests reutilizam o mesmo cache e recusam históricos incompletos.

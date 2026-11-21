@@ -5,6 +5,7 @@ import dev.cvalente.trading.market.CandleHistoryService;
 import dev.cvalente.trading.research.BacktestHistoryService;
 import dev.cvalente.trading.research.ReplayBacktester;
 import dev.cvalente.trading.research.BacktestConfig;
+import dev.cvalente.trading.research.BacktestComparison;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -44,6 +45,19 @@ public class ResearchController {
             : ReplayBacktester.run(candleHistory.candles(), strategy, 10000, config);
         Long id = history.save(symbol, interval, fee, slippage, report);
         return new SavedBacktest(id, report);
+    }
+    @GetMapping("/backtest/compare")
+    public BacktestComparison.Result compare(@RequestParam(defaultValue="BTCUSDT") String symbol,
+        @RequestParam(defaultValue="DAY") StrategyType strategy,
+        @RequestParam(defaultValue="500") int candles,
+        @RequestParam(defaultValue="0.001") double fee,
+        @RequestParam(defaultValue="0.0005") double slippage,
+        @RequestParam(defaultValue="0.5") double riskPercent) {
+        String interval = strategy == StrategyType.DAY ? "15m" : "4h";
+        var candleHistory = historyCandles.load(symbol, interval, candles);
+        if (!candleHistory.complete()) throw new IllegalArgumentException("Cannot backtest incomplete candle history");
+        return BacktestComparison.run(candleHistory.candles(), strategy, 10000,
+            BacktestConfig.defaults(riskPercent, fee, slippage));
     }
     @GetMapping("/candles")
     public CandleHistoryService.History candles(@RequestParam(defaultValue="BTCUSDT") String symbol,

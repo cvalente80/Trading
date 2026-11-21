@@ -70,6 +70,15 @@ class ResearchControllerIntegrationTest {
             .andExpect(jsonPath("$.summary.expectancy").value(0));
     }
 
+    @Test void comparisonEndpointReturnsThreeReports() throws Exception {
+        when(candles.load("BTCUSDT", "15m", 100)).thenReturn(new CandleHistoryService.History(flatCandles(100), 0, 100, true));
+        mvc.perform(get("/api/v1/research/backtest/compare").param("candles", "100").param("riskPercent", ".5"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.longOnly.strategy").value("DAY"))
+            .andExpect(jsonPath("$.shortOnly.strategy").value("DAY_SHORT"))
+            .andExpect(jsonPath("$.combined.strategy").value("DAY_LONG_SHORT"));
+    }
+
     private static List<Candle> flatCandles(int count) {
         List<Candle> result = new ArrayList<>();
         for (int i = 0; i < count; i++) {
