@@ -24,4 +24,15 @@ public record BacktestConfig(double riskPercent, double fee, double slippage,
     public static BacktestConfig conservative(double fee, double slippage) {
         return defaults(.5, fee, slippage);
     }
+
+    /** Stable, human-readable representation persisted with every research run. */
+    public String canonicalForm() {
+        return "riskPercent=" + riskPercent + ",fee=" + fee + ",slippage=" + slippage
+            + ",higherTimeframeTrend=" + higherTimeframeTrend + ",adxFilter=" + adxFilter
+            + ",rsiFilter=" + rsiFilter + ",volumeFilter=" + volumeFilter
+            + ",avoidBearishRegime=" + avoidBearishRegime + ",enableShort=" + enableShort
+            + ",trailingStopAtr=" + trailingStopAtr + ",maxHoldingCandles=" + maxHoldingCandles
+            + ",maxEmaDistancePercent=" + maxEmaDistancePercent + ",minAdx=" + minAdx
+            + ",minRsi=" + minRsi + ",maxRsi=" + maxRsi;
+    }
 }

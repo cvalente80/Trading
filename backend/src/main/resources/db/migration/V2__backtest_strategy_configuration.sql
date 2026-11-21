@@ -1,0 +1,2 @@
+ALTER TABLE backtest_runs ADD COLUMN IF NOT EXISTS strategy_version VARCHAR(64) NOT NULL DEFAULT 'legacy';
+ALTER TABLE backtest_runs ADD COLUMN IF NOT EXISTS configuration TEXT NOT NULL DEFAULT '';

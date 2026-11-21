@@ -5,6 +5,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.List;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 @Service
 public class BacktestHistoryService {
@@ -31,9 +34,17 @@ public class BacktestHistoryService {
     }
     @Transactional
     public Long save(String symbol, String interval, double fee, double slippage, ReplayBacktester.Report report) {
+        return save(symbol, interval, fee, slippage, report,
+            BacktestConfig.defaults(.5, fee, slippage));
+    }
+    @Transactional
+    public Long save(String symbol, String interval, double fee, double slippage,
+                     ReplayBacktester.Report report, BacktestConfig config) {
         BacktestRunEntity run = new BacktestRunEntity();
         run.createdAt = Instant.now(); run.symbol = symbol; run.strategy = report.strategy();
         run.intervalCode = interval; run.candleCount = report.candles();
+        run.configuration = config.canonicalForm();
+        run.strategyVersion = version(report.strategy(), interval, config);
         run.feeRate = fee; run.slippageRate = slippage;
         run.initialEquity = report.initialEquity(); run.finalEquity = report.finalEquity();
         run.netReturnPercent = report.netReturnPercent(); run.buyHoldPercent = report.buyHoldPercent();
@@ -56,6 +67,19 @@ public class BacktestHistoryService {
             trades.save(trade);
         }
         return run.id;
+    }
+
+    public static String version(String strategy, String interval, BacktestConfig config) {
+        try {
+            var digest = MessageDigest.getInstance("SHA-256");
+            var input = (strategy + "|" + interval + "|" + config.canonicalForm())
+                .getBytes(StandardCharsets.UTF_8);
+            var hex = new StringBuilder();
+            for (byte b : digest.digest(input)) hex.append(String.format("%02x", b));
+            return hex.substring(0, 16);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 unavailable", e);
+        }
     }
     @Transactional(readOnly=true)
     public List<RunSummary> recent() {
