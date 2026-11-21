@@ -11,8 +11,8 @@ import java.util.List;
 @Component
 public class SignalEngine {
     public Signal evaluate(String symbol, StrategyType strategy, List<Candle> candles) {
-        int fast = strategy == StrategyType.DAY ? 9 : 20;
-        int slow = strategy == StrategyType.DAY ? 21 : 50;
+        int fast = CrossoverSignalPolicy.fastPeriod(strategy);
+        int slow = CrossoverSignalPolicy.slowPeriod(strategy);
         int rsiPeriod = 14;
         if (candles == null || candles.size() < slow + 2)
             return new Signal(symbol, strategy, "INSUFFICIENT_DATA", 0, null, null, null, null, Instant.now(),
@@ -42,7 +42,10 @@ public class SignalEngine {
         BigDecimal stop = close.multiply(new BigDecimal("0.985")).setScale(8, RoundingMode.HALF_UP);
         BigDecimal target = close.multiply(new BigDecimal("1.03")).setScale(8, RoundingMode.HALF_UP);
         BigDecimal rr = target.subtract(close).divide(close.subtract(stop), 4, RoundingMode.HALF_UP);
-        String action = score >= 70 ? "BUY_CANDIDATE" : score >= 50 ? "WATCH" : "NO_TRADE";
+        CrossoverSignalPolicy.Decision decision = CrossoverSignalPolicy.latest(candles, strategy);
+        String action = decision == CrossoverSignalPolicy.Decision.BUY ? "BUY_CANDIDATE" :
+            decision == CrossoverSignalPolicy.Decision.EXIT ? "BEARISH_EXIT" :
+            score >= 50 ? "WATCH" : "NO_TRADE";
         return new Signal(symbol, strategy, action, score, close, stop, target, rr, Instant.now(), List.copyOf(reasons));
     }
 }

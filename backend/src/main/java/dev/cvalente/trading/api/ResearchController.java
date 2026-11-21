@@ -4,6 +4,7 @@ import dev.cvalente.trading.domain.StrategyType;
 import dev.cvalente.trading.market.CandleHistoryService;
 import dev.cvalente.trading.research.BacktestHistoryService;
 import dev.cvalente.trading.research.ReplayBacktester;
+import dev.cvalente.trading.research.BacktestConfig;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -22,12 +23,22 @@ public class ResearchController {
         @RequestParam(defaultValue="DAY") StrategyType strategy,
         @RequestParam(defaultValue="500") int candles,
         @RequestParam(defaultValue="0.001") double fee,
-        @RequestParam(defaultValue="0.0005") double slippage) {
+        @RequestParam(defaultValue="0.0005") double slippage,
+        @RequestParam(defaultValue="0.5") double riskPercent,
+        @RequestParam(defaultValue="false") boolean higherTimeframeTrend,
+        @RequestParam(defaultValue="false") boolean adxFilter,
+        @RequestParam(defaultValue="false") boolean rsiFilter,
+        @RequestParam(defaultValue="false") boolean volumeFilter,
+        @RequestParam(defaultValue="Infinity") double maxEmaDistancePercent,
+        @RequestParam(defaultValue="20") double minAdx,
+        @RequestParam(defaultValue="45") double minRsi,
+        @RequestParam(defaultValue="68") double maxRsi) {
         String interval = strategy == StrategyType.DAY ? "15m" : "4h";
         var candleHistory = historyCandles.load(symbol, interval, candles);
         if (!candleHistory.complete()) throw new IllegalArgumentException("Cannot backtest incomplete candle history");
-        var report = ReplayBacktester.run(candleHistory.candles(),
-            strategy, 10000, 1, fee, slippage);
+        var config = new BacktestConfig(riskPercent, fee, slippage, higherTimeframeTrend,
+            adxFilter, rsiFilter, volumeFilter, maxEmaDistancePercent, minAdx, minRsi, maxRsi);
+        var report = ReplayBacktester.run(candleHistory.candles(), strategy, 10000, config);
         Long id = history.save(symbol, interval, fee, slippage, report);
         return new SavedBacktest(id, report);
     }

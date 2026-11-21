@@ -24,6 +24,12 @@ public class BacktestRunEntity {
     public double profitFactor;
     public double maxDrawdownPercent;
     public double totalFees;
+    public double expectancy;
+    public double averageGain;
+    public double averageLoss;
+    public double averageDurationSeconds;
+    public int maxConsecutiveLosses;
+    public double randomBenchmarkPercent;
     @Column(length=600) public String note;
     public BacktestRunEntity() {}
 }

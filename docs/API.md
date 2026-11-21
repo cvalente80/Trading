@@ -17,7 +17,11 @@ Este universo é apenas um filtro de liquidez atual; ainda não é um universo h
 Nota: Os endpoints de sinais, backtesting e paper portfolio descritos como futuros ainda nao estao implementados.
 
 ## Persistência v0.4
-- `GET /api/v1/research/backtest?symbol=BTCUSDT&strategy=DAY&candles=500`: executa e **guarda** a simulação. Retorna `id` e `report`.
+- `GET /api/v1/research/backtest`: executa e **guarda** a simulação. Parâmetros opcionais:
+  `symbol`, `strategy=DAY|SWING`, `candles`, `fee`, `slippage`, `riskPercent`,
+  `higherTimeframeTrend`, `adxFilter`, `rsiFilter`, `volumeFilter`,
+  `maxEmaDistancePercent`, `minAdx`, `minRsi` e `maxRsi`. O sizing recomendado é
+  `riskPercent=0.25` ou `0.5`. Retorna `id` e `report`.
 - `GET /api/v1/research/backtests`: lista as últimas 50 simulações guardadas.
 - `GET /api/v1/research/backtests/{id}`: detalhes de uma simulação e respetivas operações.
 
@@ -30,10 +34,13 @@ desenhar os marcadores de entrada, saída, stop e target.
 ### Compatibilidade com o frontend
 
 O dashboard React consome os campos `id` e `report` de `/research/backtest`, e os
-campos `finalEquity`, `netReturnPercent`, `buyHoldPercent`, `completedTrades`,
-`winRatePercent`, `profitFactor`, `maxDrawdownPercent` e `totalFees` do relatório.
+campos `finalEquity`, `netReturnPercent`, `buyHoldPercent`,
+`randomBenchmarkPercent`, `completedTrades`, `winRatePercent`, `profitFactor`,
+`maxDrawdownPercent`, `totalFees`, `expectancy`, `averageGain`, `averageLoss`,
+`averageDurationSeconds` e `maxConsecutiveLosses` do relatório.
 Também consome `id`, `createdAt`, `symbol`, `strategy`, `netReturnPercent`,
-`completedTrades`, `maxDrawdownPercent` de `/research/backtests`.
+`completedTrades`, `maxDrawdownPercent`, `expectancy` e `randomBenchmarkPercent`
+de `/research/backtests`.
 
 O frontend trata `profitFactor` não finito/indefinido como `Indefinido` e apresenta a
 mensagem `error` devolvida pela API quando o histórico está incompleto. O runtime
@@ -51,6 +58,9 @@ obrigatório do frontend é Node.js 24.x, conforme `frontend/.nvmrc` e `package.
 - Posições abertas no fim são marcadas a mercado e não contam como trades concluídos.
 - `winRatePercent` considera apenas trades concluídos.
 - `profitFactor` é a soma dos ganhos brutos dividida pela soma das perdas brutas. Sem trades ou sem ganhos/perdas suficientes, a métrica pode ser indefinida; o frontend apresenta `Indefinido`.
+- `buyHoldPercent` e `randomBenchmarkPercent` usam o mesmo intervalo de candles do backtest. A estratégia aleatória é determinística (seed interno fixa) para permitir comparação reproduzível.
+- `expectancy` é o PnL líquido médio por trade concluído; `averageGain` e `averageLoss` são médias condicionais aos trades vencedores/perdedores. `averageDurationSeconds` é a duração média dos trades concluídos.
+- Os filtros são independentes e vêm desligados por defeito, exceto os controlos escolhidos pelo dashboard. `maxEmaDistancePercent` impede entradas quando o preço está demasiado afastado da EMA rápida.
 
 ## GET /api/v1/research/candles?symbol=BTCUSDT&interval=15m&limit=500
 Lê os candles fechados do PostgreSQL e descarrega apenas os intervalos em falta da API pública Binance. Retorna `candles`, `fetched`, `stored` e `complete`. `complete=true` só quando a quantidade, o primeiro timestamp e todos os intervalos esperados estão presentes. Intervalos: `5m`, `15m`, `1h`, `4h`, `1d`; 70–10000 candles por pedido. Os backtests reutilizam o mesmo cache e recusam históricos incompletos.

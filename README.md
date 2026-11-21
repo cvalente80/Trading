@@ -6,7 +6,7 @@ Não envia ordens reais. Não pede API keys. A Binance é usada apenas como font
 ## Configuração inicial
 - Saldo virtual: 10.000 USDT
 - Mercado: Spot
-- Risco planeado por operação: 1% do equity (100 USDT inicialmente)
+- Risco recomendado nos estudos: 0,25–0,5% do equity
 - Estratégias: Day e Swing, com rankings e parâmetros separados
 - Execução: local, via Docker Compose
 
@@ -41,12 +41,78 @@ npm test
 npm run build
 ```
 
+### Testes no macOS
+
+Backend, usando o cache Maven já preenchido:
+
+```bash
+cd backend
+mvn -o -Daether.syncContext.named.factory=rwlock-local -q test
+```
+
+O `rwlock-local` evita problemas de file locking do Maven no macOS. Se for
+necessário descarregar dependências, use Maven normalmente uma vez com acesso à
+rede e depois volte a usar `-o`.
+
+Frontend, com Node 24:
+
+```bash
+cd frontend
+nvm use
+npm ci --include=dev --ignore-scripts --no-audit --no-fund
+npm test -- --run
+npm run build
+```
+
+Em ambientes macOS que injetem configurações próprias no `npm` (por exemplo,
+`CODEX_MANAGED_BY_NPM`) e apresentem `SecItemCopyMatching failed -50`, execute
+com um ambiente limpo:
+
+```bash
+env -i \
+  PATH="$HOME/.nvm/versions/node/v24.22.1/bin:/opt/homebrew/bin:/usr/bin:/bin" \
+  HOME="$HOME" \
+  NPM_CONFIG_CACHE=/private/tmp/crypto-npm-cache \
+  npm ci --include=dev --ignore-scripts --no-audit --no-fund
+
+env -i \
+  PATH="$HOME/.nvm/versions/node/v24.22.1/bin:/opt/homebrew/bin:/usr/bin:/bin" \
+  HOME="$HOME" \
+  NPM_CONFIG_CACHE=/private/tmp/crypto-npm-cache \
+  npm test -- --run
+
+env -i \
+  PATH="$HOME/.nvm/versions/node/v24.22.1/bin:/opt/homebrew/bin:/usr/bin:/bin" \
+  HOME="$HOME" \
+  NPM_CONFIG_CACHE=/private/tmp/crypto-npm-cache \
+  npm run build
+```
+
+Se o Node 24 for gerido pelo runtime do IntelliJ/Codex, substitua o primeiro
+elemento de `PATH` pelo diretório `bin` desse runtime. O ponto importante é
+remover as variáveis `CODEX_MANAGED_*`, `npm_config_local_prefix` e
+`npm_package_json` do ambiente do processo.
+
 Backend: `http://localhost:8081`
 - `GET /api/v1/lab/config`
 - `GET /api/v1/market/universe`
 
 ## Estado desta entrega
-Esta é a fundação executável do laboratório: configuração, domínio, sizing de posição, indicadores, motor de sinais explicável, endpoints e dashboard inicial. A recolha histórica persistente, backtester completo com fills realistas, paper broker, WebSocket, autenticação, observabilidade e testes de integração são etapas seguintes. Não interpretar o score como probabilidade de lucro.
+O laboratório inclui backtesting persistente, filtros configuráveis, walk-forward,
+benchmarks, métricas de risco, endpoints de investigação, dashboard e testes de
+integração HTTP. A implementação atual usa uma política comum de sinais entre o
+`SignalEngine` e o `ReplayBacktester`, incluindo saída em cruzamento bearish.
+
+O replay suporta filtros opcionais de tendência numa timeframe superior, ADX, RSI,
+volume e distância máxima à EMA. Os relatórios incluem buy-and-hold, benchmark
+aleatório determinístico, expectancy, médias de ganho/perda, duração média e
+perdas consecutivas. O endpoint e o dashboard permitem controlar o risco por
+operação, com opções recomendadas de 0,25% e 0,5%, e os custos de execução são
+parametrizáveis.
+
+O estado de validação desta entrega está registado em
+[`docs/TEST-REPORT.md`](docs/TEST-REPORT.md). Não interpretar os resultados como
+garantia de lucro.
 
 ## Princípios de investigação
 1. Nunca otimizar e avaliar no mesmo período.
@@ -60,7 +126,7 @@ Esta é a fundação executável do laboratório: configuração, domínio, sizi
 - Adicionado @vitejs/plugin-react que faltava.
 - Corrigida documentação de endpoints ainda não implementados.
 - Incluído motor inicial de backtesting determinístico com comissões e slippage e teste Java puro.
-- Ainda não compilado com Maven nem testado em Docker neste ambiente.
+- Os comandos de validação para macOS estão documentados acima.
 
 ## v0.3 — Backtest com candles reais
 
@@ -84,7 +150,8 @@ consideram apenas trades concluídos; métricas indefinidas são apresentadas co
 
 **Validação efetuada:** o backend possui testes JUnit para sizing, custos, execução de
 stops/targets/gaps, drawdown, métricas e integridade temporal/look-ahead. O frontend é
-validado com `npm run build`.
+validado com `npm test -- --run` e `npm run build`. Existem também testes HTTP de
+integração para os endpoints de backtest e histórico.
 
 O `ReplayBacktester` é o único motor usado pela API e pelo histórico persistido. O
 motor close-to-close original foi isolado em `backtest.legacy.LegacyBacktestEngine`

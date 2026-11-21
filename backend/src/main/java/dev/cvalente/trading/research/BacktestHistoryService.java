@@ -17,13 +17,17 @@ public class BacktestHistoryService {
         String interval, int candleCount, double feeRate, double slippageRate,
         double initialEquity, double finalEquity, double netReturnPercent,
         double buyHoldPercent, int completedTrades, double winRatePercent,
-        double profitFactor, double maxDrawdownPercent, double totalFees) {}
+        double profitFactor, double maxDrawdownPercent, double totalFees,
+        double expectancy, double averageGain, double averageLoss,
+        double averageDurationSeconds, int maxConsecutiveLosses,
+        double randomBenchmarkPercent) {}
     public record RunDetails(RunSummary summary, List<ReplayBacktester.Trade> trades, String note) {}
     private static RunSummary summary(BacktestRunEntity e) {
         return new RunSummary(e.id,e.createdAt,e.symbol,e.strategy,e.intervalCode,
             e.candleCount,e.feeRate,e.slippageRate,e.initialEquity,e.finalEquity,
             e.netReturnPercent,e.buyHoldPercent,e.completedTrades,e.winRatePercent,
-            e.profitFactor,e.maxDrawdownPercent,e.totalFees);
+            e.profitFactor,e.maxDrawdownPercent,e.totalFees,e.expectancy,e.averageGain,
+            e.averageLoss,e.averageDurationSeconds,e.maxConsecutiveLosses,e.randomBenchmarkPercent);
     }
     @Transactional
     public Long save(String symbol, String interval, double fee, double slippage, ReplayBacktester.Report report) {
@@ -35,7 +39,11 @@ public class BacktestHistoryService {
         run.netReturnPercent = report.netReturnPercent(); run.buyHoldPercent = report.buyHoldPercent();
         run.completedTrades = report.completedTrades(); run.winRatePercent = report.winRatePercent();
         run.profitFactor = report.profitFactor(); run.maxDrawdownPercent = report.maxDrawdownPercent();
-        run.totalFees = report.totalFees(); run.note = report.note();
+        run.totalFees = report.totalFees(); run.expectancy = report.expectancy();
+        run.averageGain = report.averageGain(); run.averageLoss = report.averageLoss();
+        run.averageDurationSeconds = report.averageDurationSeconds();
+        run.maxConsecutiveLosses = report.maxConsecutiveLosses();
+        run.randomBenchmarkPercent = report.randomBenchmarkPercent(); run.note = report.note();
         run = runs.save(run);
         for (ReplayBacktester.Trade t : report.trades()) {
             BacktestTradeEntity trade = new BacktestTradeEntity();
