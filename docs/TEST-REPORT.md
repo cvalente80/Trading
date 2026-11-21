@@ -16,6 +16,9 @@ Foi adicionada e validada a fundação do paper broker: livro de ordens in-memor
 ordens market/limit, fills determinísticos, cash, equity, posições e P&L realizado
 e não realizado. Os testes cobrem compra/venda, fees, fills limit e cancelamento.
 
+Foram adicionadas regras de sizing com notional mínimo/máximo e validação de cash
+no fill. Os testes cobrem limites para ordens limit/market e saldo insuficiente.
+
 ## Atualização desta execução
 
 Foi validada a funcionalidade `avoidBearishRegime`, que bloqueia novas entradas

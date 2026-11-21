@@ -124,6 +124,8 @@ Trailing stop e saída temporal estão disponíveis através dos parâmetros
 
 O paper broker está disponível em `/api/v1/paper/account` e
 `/api/v1/paper/orders`. É in-memory, spot-only e exclusivamente simulado.
+As compras respeitam o cash disponível e o broker suporta limites de notional
+mínimo/máximo para controlar o sizing.
 
 ## Princípios de investigação
 1. Nunca otimizar e avaliar no mesmo período.

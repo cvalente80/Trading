@@ -15,14 +15,20 @@ public class PaperBroker {
     private final Map<String, MutablePosition> positions = new LinkedHashMap<>();
     private final List<PaperFill> fills = new ArrayList<>();
     private final BigDecimal feeRate;
+    private final BigDecimal minNotional;
+    private final BigDecimal maxNotional;
     private BigDecimal cash;
     private long nextId = 1;
 
-    public PaperBroker() { this(new BigDecimal("10000"), new BigDecimal("0.001")); }
+    public PaperBroker() { this(new BigDecimal("10000"), new BigDecimal("0.001"), BigDecimal.ZERO, new BigDecimal("1E+1000")); }
     public PaperBroker(BigDecimal initialCash, BigDecimal feeRate) {
-        if (initialCash == null || initialCash.signum() <= 0 || feeRate == null || feeRate.signum() < 0 || feeRate.compareTo(BigDecimal.ONE) >= 0)
+        this(initialCash, feeRate, BigDecimal.ZERO, new BigDecimal("1E+1000"));
+    }
+    public PaperBroker(BigDecimal initialCash, BigDecimal feeRate, BigDecimal minNotional, BigDecimal maxNotional) {
+        if (initialCash == null || initialCash.signum() <= 0 || feeRate == null || feeRate.signum() < 0 || feeRate.compareTo(BigDecimal.ONE) >= 0 ||
+            minNotional == null || minNotional.signum() < 0 || maxNotional == null || maxNotional.compareTo(minNotional) < 0)
             throw new IllegalArgumentException("Invalid paper broker configuration");
-        this.cash = initialCash; this.feeRate = feeRate;
+        this.cash = initialCash; this.feeRate = feeRate; this.minNotional = minNotional; this.maxNotional = maxNotional;
     }
 
     public synchronized PaperOrder submit(String symbol, OrderSide side, OrderType type, BigDecimal quantity,
@@ -30,6 +36,7 @@ public class PaperBroker {
         if (symbol == null || symbol.isBlank() || side == null || type == null || quantity == null || quantity.signum() <= 0 || now == null ||
             (type == OrderType.LIMIT && (limitPrice == null || limitPrice.signum() <= 0)))
             throw new IllegalArgumentException("Invalid paper order");
+        if (type == OrderType.LIMIT) validateNotional(quantity.multiply(limitPrice));
         PaperOrder order = new PaperOrder(nextId++, symbol, side, type, quantity, limitPrice, now, "OPEN");
         orders.put(order.id(), order);
         return order;
@@ -73,6 +80,7 @@ public class PaperBroker {
 
     private PaperFill execute(PaperOrder order, BigDecimal price, Instant time) {
         BigDecimal gross = price.multiply(order.quantity()), fee = gross.multiply(feeRate);
+        validateNotional(gross);
         MutablePosition position = positions.computeIfAbsent(order.symbol(), MutablePosition::new);
         if (order.side() == OrderSide.BUY) {
             BigDecimal total = gross.add(fee);
@@ -83,6 +91,11 @@ public class PaperBroker {
             cash = cash.add(gross.subtract(fee)); position.sell(order.quantity(), price, fee);
         }
         return new PaperFill(order.id(), order.symbol(), order.side(), order.quantity(), price, fee, time);
+    }
+
+    private void validateNotional(BigDecimal notional) {
+        if (notional.compareTo(minNotional) < 0 || notional.compareTo(maxNotional) > 0)
+            throw new IllegalArgumentException("Order notional outside configured limits");
     }
 
     private static final class MutablePosition {

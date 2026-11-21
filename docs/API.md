@@ -79,3 +79,6 @@ Lê os candles fechados do PostgreSQL e descarrega apenas os intervalos em falta
 
 O broker é in-memory, spot-only e não envia ordens reais. Os fills são
 determinísticos quando alimentado com candles; a comissão predefinida é 0,1%.
+O broker rejeita notionals fora dos limites configurados e rejeita compras cujo
+notional acrescido de fee exceda o cash disponível. Ordens abertas não reservam
+saldo; a validação final ocorre no fill.

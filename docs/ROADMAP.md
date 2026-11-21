@@ -21,7 +21,7 @@
 ## Entrega 2 — Paper broker
 - [x] Livro de ordens e fills simulados
 - [x] Equity/cash/positions e P&L realizado/não realizado
-- [ ] Regras de sizing com limites de notional e saldo
+- [x] Regras de sizing com limites de notional e saldo
 - [ ] Diário imutável de decisões e sinais
 
 ## Entrega 3 — Qualidade

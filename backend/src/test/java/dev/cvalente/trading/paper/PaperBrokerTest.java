@@ -33,6 +33,20 @@ class PaperBrokerTest {
         assertTrue(broker.snapshot().openOrders().isEmpty());
     }
 
+    @Test void notionalLimitsAreAppliedToLimitAndMarketFills() {
+        var broker = new PaperBroker(bd(1000), bd("0"), bd(100), bd(200));
+        assertThrows(IllegalArgumentException.class, () ->
+            broker.submit("BTCUSDT", OrderSide.BUY, OrderType.LIMIT, bd(1), bd(50), Instant.EPOCH));
+        broker.submit("BTCUSDT", OrderSide.BUY, OrderType.MARKET, bd(3), null, Instant.EPOCH);
+        assertThrows(IllegalArgumentException.class, () -> broker.onCandle(candle(100, 0)));
+    }
+
+    @Test void availableCashIsCheckedAtMarketFill() {
+        var broker = new PaperBroker(bd(100), bd("0"));
+        broker.submit("BTCUSDT", OrderSide.BUY, OrderType.MARKET, bd(2), null, Instant.EPOCH);
+        assertThrows(IllegalArgumentException.class, () -> broker.onCandle(candle(60, 0)));
+    }
+
     private static Candle candle(int close, long seconds) { return candle(close, seconds, close - 1); }
     private static Candle candle(int close, long seconds, int low) {
         BigDecimal p = bd(close);
