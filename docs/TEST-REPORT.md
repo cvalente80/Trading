@@ -45,6 +45,15 @@ criação de tópico e round-trip de mensagem. Como o Docker socket continua
 indisponível neste ambiente, estes testes são skipped localmente e ficam prontos
 para execução completa no CI.
 
+Foi adicionada `PaperBrokerInfrastructureIT`, que executa o broker com
+PostgreSQL, Redis e Kafka no mesmo cenário e valida persistência, recuperação,
+estado auxiliar e evento de fill. Sem Docker, o teste fica skipped; com Docker,
+exercita os três containers reais.
+
+Após esta integração, a suite backend normal e a suite frontend foram executadas
+novamente com sucesso; o teste multi-container permanece condicionado à
+disponibilidade do Docker.
+
 As dependências Kafka/Testcontainers foram adicionadas e a suite backend normal
 continua a passar. A integração Redis/Kafka permanece skipped neste ambiente pela
 indisponibilidade do Docker socket; com Docker, `RedisKafkaContainersIT` executa

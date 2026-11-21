@@ -126,3 +126,13 @@ mvn -Dtest=RedisKafkaContainersIT test
 ```
 
 O teste requer Docker e usa Redis 8 e Kafka `confluentinc/cp-kafka:7.8.0`.
+
+O teste integrado do Paper Broker sobe PostgreSQL, Redis e Kafka no mesmo cenário:
+
+```bash
+cd backend
+mvn -Dtest=PaperBrokerInfrastructureIT test
+```
+
+Valida persistência/recuperação do broker em PostgreSQL, estado auxiliar em
+Redis e publicação do evento de fill em Kafka.
