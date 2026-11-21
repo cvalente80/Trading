@@ -35,6 +35,11 @@ Foi integrado o `SignalEngine` com o Paper Broker. Os testes HTTP cobrem o
 endpoint de avaliação; os testes de serviço confirmam que sinais são sempre
 registados e que sinais de entrada elegíveis criam ordens market simuladas.
 
+Foi adicionada a integração PostgreSQL com Testcontainers (`PaperBrokerPostgresIT`)
+para validar recuperação após reinício. Neste ambiente o teste direcionado foi
+skipped porque o socket Docker não está acessível; com Docker disponível, o
+container PostgreSQL é iniciado e a persistência real é exercitada.
+
 ## Atualização desta execução
 
 Foi validada a funcionalidade `avoidBearishRegime`, que bloqueia novas entradas

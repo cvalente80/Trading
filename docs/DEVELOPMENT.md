@@ -100,3 +100,17 @@ para o Paper Broker: cada candle pode gerar fills e atualiza o estado persistido
 O endpoint `POST /api/v1/paper/signals/evaluate` liga a decisão do
 `SignalEngine` à criação de ordens; a ordem só é executada quando uma candle
 posterior gera o fill.
+
+## Integração PostgreSQL com Testcontainers
+
+O teste `PaperBrokerPostgresIT` usa PostgreSQL 17 via Testcontainers para validar
+persistência e recuperação de cash, ordens, fills e posições. Requer Docker
+Desktop/Engine acessível:
+
+```bash
+cd backend
+mvn -Dtest=PaperBrokerPostgresIT test
+```
+
+Sem Docker, o teste é automaticamente marcado como skipped; a suite normal não
+falha por isso. Em CI, garantir que o runner tenha Docker disponível.
