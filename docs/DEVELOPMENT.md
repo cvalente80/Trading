@@ -94,3 +94,6 @@ replays long e short.
 
 Não usar `docker compose down -v` salvo se for intencional apagar os dados
 persistidos do PostgreSQL.
+
+O endpoint `POST /api/v1/paper/candles` é o ponto de entrada do fluxo de candles
+para o Paper Broker: cada candle pode gerar fills e atualiza o estado persistido.

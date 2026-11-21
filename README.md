@@ -128,6 +128,8 @@ As compras respeitam o cash disponível e o broker suporta limites de notional
 mínimo/máximo para controlar o sizing.
 As decisões e sinais podem ser registados no diário append-only através de
 `/api/v1/paper/decisions`; o diário não expõe operações de alteração ou remoção.
+O endpoint `/api/v1/paper/candles` liga o fluxo de candles ao broker e pode gerar
+fills; ordens, fills e posições são persistidos em PostgreSQL.
 
 ## Princípios de investigação
 1. Nunca otimizar e avaliar no mesmo período.

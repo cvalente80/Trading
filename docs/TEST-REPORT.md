@@ -23,6 +23,10 @@ Foi adicionado o diário persistente append-only de decisões e sinais, com test
 de validação, persistência e ausência de operações de alteração/remoção. Os
 endpoints de criação e consulta foram incluídos no contrato do Paper Broker.
 
+Foram adicionados testes HTTP do Paper Broker para conta, ordens, decisões e
+ingestão de candles. Ordens, fills e posições passaram a ser persistidos em
+PostgreSQL, e o endpoint de candles foi validado como ponto de execução de fills.
+
 ## Atualização desta execução
 
 Foi validada a funcionalidade `avoidBearishRegime`, que bloqueia novas entradas

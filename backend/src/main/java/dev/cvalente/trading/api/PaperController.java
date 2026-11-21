@@ -5,6 +5,9 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import dev.cvalente.trading.domain.Candle;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/paper")
@@ -23,4 +26,7 @@ public class PaperController {
         return journal.append(Instant.now(), request.symbol(), request.strategy(), request.action(), request.score(), request.reasons());
     }
     @GetMapping("/decisions") public List<DecisionJournal.Entry> decisions() { return journal.recent(); }
+    @PostMapping("/candles") public Map<String, Object> candle(@RequestBody Candle candle) {
+        return Map.of("fills", broker.onCandle(candle), "account", broker.snapshot());
+    }
 }
