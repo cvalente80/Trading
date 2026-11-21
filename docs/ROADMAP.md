@@ -22,7 +22,7 @@
 - [x] Livro de ordens e fills simulados
 - [x] Equity/cash/positions e P&L realizado/não realizado
 - [x] Regras de sizing com limites de notional e saldo
-- [ ] Diário imutável de decisões e sinais
+- [x] Diário imutável de decisões e sinais
 
 ## Entrega 3 — Qualidade
 - [ ] Testcontainers PostgreSQL/Redis/Kafka

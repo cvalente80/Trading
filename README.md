@@ -126,6 +126,8 @@ O paper broker está disponível em `/api/v1/paper/account` e
 `/api/v1/paper/orders`. É in-memory, spot-only e exclusivamente simulado.
 As compras respeitam o cash disponível e o broker suporta limites de notional
 mínimo/máximo para controlar o sizing.
+As decisões e sinais podem ser registados no diário append-only através de
+`/api/v1/paper/decisions`; o diário não expõe operações de alteração ou remoção.
 
 ## Princípios de investigação
 1. Nunca otimizar e avaliar no mesmo período.

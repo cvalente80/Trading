@@ -19,6 +19,10 @@ e não realizado. Os testes cobrem compra/venda, fees, fills limit e cancelament
 Foram adicionadas regras de sizing com notional mínimo/máximo e validação de cash
 no fill. Os testes cobrem limites para ordens limit/market e saldo insuficiente.
 
+Foi adicionado o diário persistente append-only de decisões e sinais, com testes
+de validação, persistência e ausência de operações de alteração/remoção. Os
+endpoints de criação e consulta foram incluídos no contrato do Paper Broker.
+
 ## Atualização desta execução
 
 Foi validada a funcionalidade `avoidBearishRegime`, que bloqueia novas entradas

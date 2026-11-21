@@ -76,9 +76,12 @@ Lê os candles fechados do PostgreSQL e descarrega apenas os intervalos em falta
 - `GET /api/v1/paper/account`: cash, equity, P&L realizado/não realizado, posições, ordens abertas e fills.
 - `POST /api/v1/paper/orders`: cria uma ordem `MARKET` ou `LIMIT` com `symbol`, `side`, `quantity` e, para limit, `limitPrice`.
 - `DELETE /api/v1/paper/orders/{id}`: cancela uma ordem aberta.
+- `POST /api/v1/paper/decisions`: regista uma decisão/sinal com `symbol`, `strategy`, `action`, `score` e `reasons`.
+- `GET /api/v1/paper/decisions`: devolve as últimas 100 decisões persistidas.
 
 O broker é in-memory, spot-only e não envia ordens reais. Os fills são
 determinísticos quando alimentado com candles; a comissão predefinida é 0,1%.
 O broker rejeita notionals fora dos limites configurados e rejeita compras cujo
 notional acrescido de fee exceda o cash disponível. Ordens abertas não reservam
 saldo; a validação final ocorre no fill.
+O diário de decisões é append-only: não existem endpoints de edição ou remoção.
