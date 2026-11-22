@@ -12,6 +12,8 @@ public class BacktestRunEntity {
     @Column(nullable=false, length=20) public String symbol;
     @Column(nullable=false, length=10) public String strategy;
     @Column(nullable=false, length=10) public String intervalCode;
+    @Column(nullable=false, length=64, columnDefinition="varchar(64) default 'legacy'") public String strategyVersion = "legacy";
+    @Column(nullable=false, columnDefinition="text default ''") public String configuration = "";
     public int candleCount;
     public double feeRate;
     public double slippageRate;
@@ -24,6 +26,12 @@ public class BacktestRunEntity {
     public double profitFactor;
     public double maxDrawdownPercent;
     public double totalFees;
+    @Column(nullable=false, columnDefinition="double precision default 0") public double expectancy;
+    @Column(nullable=false, columnDefinition="double precision default 0") public double averageGain;
+    @Column(nullable=false, columnDefinition="double precision default 0") public double averageLoss;
+    @Column(nullable=false, columnDefinition="double precision default 0") public double averageDurationSeconds;
+    @Column(nullable=false, columnDefinition="integer default 0") public int maxConsecutiveLosses;
+    @Column(nullable=false, columnDefinition="double precision default 0") public double randomBenchmarkPercent;
     @Column(length=600) public String note;
     public BacktestRunEntity() {}
 }

@@ -17,9 +17,15 @@ Este universo é apenas um filtro de liquidez atual; ainda não é um universo h
 Nota: Os endpoints de sinais, backtesting e paper portfolio descritos como futuros ainda nao estao implementados.
 
 ## Persistência v0.4
-- `GET /api/v1/research/backtest?symbol=BTCUSDT&strategy=DAY&candles=500`: executa e **guarda** a simulação. Retorna `id` e `report`.
+- `GET /api/v1/research/backtest`: executa e **guarda** a simulação. Parâmetros opcionais:
+  `symbol`, `strategy=DAY|SWING`, `candles`, `fee`, `slippage`, `riskPercent`,
+  `higherTimeframeTrend`, `adxFilter`, `rsiFilter`, `volumeFilter`, `avoidBearishRegime`, `enableShort`,
+  `trailingStopAtr`, `maxHoldingCandles`, `maxEmaDistancePercent`, `minAdx`, `minRsi` e `maxRsi`. O sizing recomendado é
+  `riskPercent=0.25` ou `0.5`. Retorna `id` e `report`.
 - `GET /api/v1/research/backtests`: lista as últimas 50 simulações guardadas.
 - `GET /api/v1/research/backtests/{id}`: detalhes de uma simulação e respetivas operações.
+- `GET /api/v1/research/backtests/{id}/trades.csv`: exporta os trades concluídos em CSV, incluindo índices, preços, custos, PnL, razão e duração.
+- `GET /api/v1/research/backtest/compare`: executa automaticamente long-only, short-only e uma carteira combinada 50/50. Aceita `symbol`, `strategy`, `candles`, `fee`, `slippage` e `riskPercent` e devolve os relatórios em `longOnly`, `shortOnly` e `combined`.
 
 Cada operação no campo `trades` inclui `entryTime`, `exitTime`, `entry`, `stopLoss`,
 `takeProfit`, `exit`, `quantity`, `entryFee`, `exitFee`, `netPnl`, `reason` e
@@ -30,10 +36,13 @@ desenhar os marcadores de entrada, saída, stop e target.
 ### Compatibilidade com o frontend
 
 O dashboard React consome os campos `id` e `report` de `/research/backtest`, e os
-campos `finalEquity`, `netReturnPercent`, `buyHoldPercent`, `completedTrades`,
-`winRatePercent`, `profitFactor`, `maxDrawdownPercent` e `totalFees` do relatório.
+campos `finalEquity`, `netReturnPercent`, `buyHoldPercent`,
+`randomBenchmarkPercent`, `completedTrades`, `winRatePercent`, `profitFactor`,
+`maxDrawdownPercent`, `totalFees`, `expectancy`, `averageGain`, `averageLoss`,
+`averageDurationSeconds` e `maxConsecutiveLosses` do relatório.
 Também consome `id`, `createdAt`, `symbol`, `strategy`, `netReturnPercent`,
-`completedTrades`, `maxDrawdownPercent` de `/research/backtests`.
+`completedTrades`, `maxDrawdownPercent`, `expectancy` e `randomBenchmarkPercent`
+de `/research/backtests`.
 
 O frontend trata `profitFactor` não finito/indefinido como `Indefinido` e apresenta a
 mensagem `error` devolvida pela API quando o histórico está incompleto. O runtime
@@ -51,6 +60,32 @@ obrigatório do frontend é Node.js 24.x, conforme `frontend/.nvmrc` e `package.
 - Posições abertas no fim são marcadas a mercado e não contam como trades concluídos.
 - `winRatePercent` considera apenas trades concluídos.
 - `profitFactor` é a soma dos ganhos brutos dividida pela soma das perdas brutas. Sem trades ou sem ganhos/perdas suficientes, a métrica pode ser indefinida; o frontend apresenta `Indefinido`.
+- `buyHoldPercent` e `randomBenchmarkPercent` usam o mesmo intervalo de candles do backtest. A estratégia aleatória é determinística (seed interno fixa) para permitir comparação reproduzível.
+- `expectancy` é o PnL líquido médio por trade concluído; `averageGain` e `averageLoss` são médias condicionais aos trades vencedores/perdedores. `averageDurationSeconds` é a duração média dos trades concluídos.
+- Os filtros são independentes e vêm desligados por defeito, exceto os controlos escolhidos pelo dashboard. `maxEmaDistancePercent` impede entradas quando o preço está demasiado afastado da EMA rápida.
+- `avoidBearishRegime=true` bloqueia novas entradas long quando a tendência agregada da timeframe superior é bearish. Não fecha posições existentes nem abre posições short.
+- `enableShort=true` executa o replay short-only, com sizing por risco, stop/target ATR, custos, métricas e os mesmos benchmarks. Não combina posições long e short no mesmo replay.
+- `trailingStopAtr` ativa um trailing stop a `N` ATR do extremo favorável; `0` desativa. `maxHoldingCandles` força uma saída temporal após esse número de candles; `0` desativa.
+- `/backtest/compare` combina duas sleeves independentes, cada uma com metade do capital inicial. O resultado combinado agrega equity, trades, custos e métricas; não escolhe retrospectivamente a melhor estratégia.
 
 ## GET /api/v1/research/candles?symbol=BTCUSDT&interval=15m&limit=500
 Lê os candles fechados do PostgreSQL e descarrega apenas os intervalos em falta da API pública Binance. Retorna `candles`, `fetched`, `stored` e `complete`. `complete=true` só quando a quantidade, o primeiro timestamp e todos os intervalos esperados estão presentes. Intervalos: `5m`, `15m`, `1h`, `4h`, `1d`; 70–10000 candles por pedido. Os backtests reutilizam o mesmo cache e recusam históricos incompletos.
+
+## Paper broker
+
+- `GET /api/v1/paper/account`: cash, equity, P&L realizado/não realizado, posições, ordens abertas e fills.
+- `POST /api/v1/paper/orders`: cria uma ordem `MARKET` ou `LIMIT` com `symbol`, `side`, `quantity` e, para limit, `limitPrice`.
+- `DELETE /api/v1/paper/orders/{id}`: cancela uma ordem aberta.
+- `POST /api/v1/paper/candles`: alimenta o broker com uma candle, executando ordens elegíveis e devolvendo fills e conta atualizada.
+- `POST /api/v1/paper/signals/evaluate`: avalia candles com o `SignalEngine`, regista a decisão e cria uma ordem market simulada para sinais BUY/saída bearish quando existe sizing válido.
+- `POST /api/v1/paper/decisions`: regista uma decisão/sinal com `symbol`, `strategy`, `action`, `score` e `reasons`.
+- `GET /api/v1/paper/decisions`: devolve as últimas 100 decisões persistidas.
+
+O broker é in-memory, spot-only e não envia ordens reais. Os fills são
+determinísticos quando alimentado com candles; a comissão predefinida é 0,1%.
+Ordens, fills e posições são persistidos nas tabelas `paper_orders`, `paper_fills`
+e `paper_positions` a cada mutação do broker.
+O broker rejeita notionals fora dos limites configurados e rejeita compras cujo
+notional acrescido de fee exceda o cash disponível. Ordens abertas não reservam
+saldo; a validação final ocorre no fill.
+O diário de decisões é append-only: não existem endpoints de edição ou remoção.

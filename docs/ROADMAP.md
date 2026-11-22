@@ -15,14 +15,14 @@
 - [ ] Persistência de candles com chave (symbol, interval, open_time)
 - [ ] Backtest cronológico sem look-ahead
 - [ ] Fees, spread e slippage configuráveis
-- [ ] Stop, target, trailing stop e saída temporal
-- [ ] Relatório Day vs Swing e export CSV
+- [x] Stop, target, trailing stop e saída temporal
+- [x] Relatório Day vs Swing e export CSV
 
 ## Entrega 2 — Paper broker
-- [ ] Livro de ordens e fills simulados
-- [ ] Equity/cash/positions e P&L realizado/não realizado
-- [ ] Regras de sizing com limites de notional e saldo
-- [ ] Diário imutável de decisões e sinais
+- [x] Livro de ordens e fills simulados
+- [x] Equity/cash/positions e P&L realizado/não realizado
+- [x] Regras de sizing com limites de notional e saldo
+- [x] Diário imutável de decisões e sinais
 
 ## Entrega 3 — Qualidade
 - [ ] Testcontainers PostgreSQL/Redis/Kafka

@@ -4,6 +4,8 @@ import dev.cvalente.trading.domain.Candle;
 import dev.cvalente.trading.domain.StrategyType;
 import dev.cvalente.trading.market.BinancePublicMarketClient;
 import dev.cvalente.trading.market.CandleSeriesValidator;
+import dev.cvalente.trading.strategy.CrossoverSignalPolicy;
+import dev.cvalente.trading.strategy.Indicators;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,11 +29,19 @@ public final class ReplayBacktester {
     }
     public record Report(String strategy, int candles, double initialEquity, double finalEquity,
                          double netReturnPercent, double buyHoldPercent, int completedTrades,
+                         double randomBenchmarkPercent,
                          double winRatePercent, double profitFactor, double maxDrawdownPercent,
-                         double totalFees, List<Trade> trades, String note) {}
+                         double totalFees, double expectancy, double averageGain, double averageLoss,
+                         double averageDurationSeconds, int maxConsecutiveLosses,
+                         List<Trade> trades, String note) {}
 
     public static Report run(List<Candle> candles, StrategyType strategy, double initial,
                              double riskPercent, double fee, double slippage) {
+        return run(candles, strategy, initial, BacktestConfig.defaults(riskPercent, fee, slippage));
+    }
+
+    public static Report run(List<Candle> candles, StrategyType strategy, double initial, BacktestConfig config) {
+        double riskPercent = config.riskPercent(), fee = config.fee(), slippage = config.slippage();
         if (candles == null || candles.size() < 70 || strategy == null || !Double.isFinite(initial) || initial <= 0 ||
             !Double.isFinite(riskPercent) || !Double.isFinite(fee) || !Double.isFinite(slippage) ||
             riskPercent <= 0 || riskPercent > 5 || fee < 0 || fee >= 0.1 ||
@@ -75,9 +85,30 @@ public final class ReplayBacktester {
                         entry, stop, target, exit, qty, positionEntryFee, exitFee, pnl, reason));
                     qty = 0;
                 }
+                if (qty > 0 && CrossoverSignalPolicy.decision(candles, i - 1, strategy) == CrossoverSignalPolicy.Decision.EXIT) {
+                    double exit = open * (1 - slippage);
+                    double gross = qty * exit, exitFee = gross * fee;
+                    double pnl = gross - exitFee - entryCost;
+                    cash += gross - exitFee; fees += exitFee;
+                    trades.add(new Trade(entryIndex, i, candles.get(entryIndex).openTime(), current.openTime(),
+                        entry, stop, target, exit, qty, positionEntryFee, exitFee, pnl, "BEARISH_CROSS"));
+                    qty = 0;
+                }
+                if (qty > 0 && config.maxHoldingCandles() > 0 && i - entryIndex >= config.maxHoldingCandles()) {
+                    double exit = open * (1 - slippage), gross = qty * exit, exitFee = gross * fee;
+                    double pnl = gross - exitFee - entryCost;
+                    cash += gross - exitFee; fees += exitFee;
+                    trades.add(new Trade(entryIndex, i, candles.get(entryIndex).openTime(), current.openTime(), entry, stop,
+                        target, exit, qty, positionEntryFee, exitFee, pnl, "TIME_EXIT"));
+                    qty = 0;
+                }
+                if (qty > 0 && config.trailingStopAtr() > 0) {
+                    double trail = current.high().doubleValue() - config.trailingStopAtr() * atr(candles, i, 14);
+                    if (Double.isFinite(trail)) stop = Math.max(stop, trail);
+                }
             }
             // Signals depend exclusively on the previous closed bar (i-1).
-            if (qty == 0 && i > 61 && bullish(candles, i-1, fast, slow)) {
+            if (qty == 0 && i > 61 && eligibleEntry(candles, i - 1, strategy, config)) {
                 double atr = atr(candles, i-1, 14);
                 if (atr > 0) {
                     double fill = open * (1 + slippage);
@@ -132,16 +163,59 @@ public final class ReplayBacktester {
         PerformanceMetrics.TradeMetrics metrics = PerformanceMetrics.trades(trades);
         return new Report(strategy.name(), candles.size(), initial, finalEquity,
             100 * (finalEquity / initial - 1), bh, trades.size(),
+            BenchmarkMetrics.randomLongFlatPercent(candles, 42L, .5),
             metrics.winRatePercent(), metrics.profitFactor(),
-            drawdown.maxDrawdownPercent(), fees, List.copyOf(trades),
+            drawdown.maxDrawdownPercent(), fees, metrics.expectancy(), metrics.averageGain(),
+            metrics.averageLoss(), metrics.averageDurationSeconds(), metrics.maxConsecutiveLosses(),
+            List.copyOf(trades),
             "Historical simulation; no guarantee. One position, next-open fills, stop-first ambiguity. " +
             "Profit factor is +Infinity when there are gains and no losing completed trades.");
     }
 
+    private static boolean eligibleEntry(List<Candle> candles, int end, StrategyType strategy, BacktestConfig config) {
+        if (CrossoverSignalPolicy.decision(candles, end, strategy) != CrossoverSignalPolicy.Decision.BUY) return false;
+        int fast = CrossoverSignalPolicy.fastPeriod(strategy);
+        double close = candles.get(end).close().doubleValue();
+        double ema = Indicators.ema(candles.subList(0, end + 1), fast).doubleValue();
+        if (config.maxEmaDistancePercent() < Double.POSITIVE_INFINITY &&
+            100 * Math.abs(close - ema) / ema > config.maxEmaDistancePercent()) return false;
+        if (config.rsiFilter()) {
+            double rsi = Indicators.rsi(candles.subList(0, end + 1), 14).doubleValue();
+            if (rsi < config.minRsi() || rsi > config.maxRsi()) return false;
+        }
+        if (config.volumeFilter()) {
+            double avg = Indicators.averageQuoteVolume(candles.subList(0, end + 1), Math.min(20, end + 1)).doubleValue();
+            if (candles.get(end).quoteVolume().doubleValue() <= avg) return false;
+        }
+        if (config.adxFilter() && adx(candles, end, 14) < config.minAdx()) return false;
+        if (config.higherTimeframeTrend() && !higherTrend(candles, end, strategy)) return false;
+        if (config.avoidBearishRegime() && !higherTrend(candles, end, strategy)) return false;
+        return true;
+    }
+
+    private static boolean higherTrend(List<Candle> candles, int end, StrategyType strategy) {
+        int step = strategy == StrategyType.DAY ? 4 : 6;
+        List<Candle> sampled = new ArrayList<>();
+        for (int i = step - 1; i <= end; i += step) sampled.add(candles.get(i));
+        if (sampled.size() < 21) return false;
+        return Indicators.ema(sampled, 9).compareTo(Indicators.ema(sampled, 21)) > 0;
+    }
+
+    private static double adx(List<Candle> candles, int end, int period) {
+        if (end < period * 2) return 0;
+        double tr = 0, movement = 0;
+        for (int i = end - period + 1; i <= end; i++) {
+            double high = candles.get(i).high().doubleValue(), low = candles.get(i).low().doubleValue();
+            double prevClose = candles.get(i - 1).close().doubleValue();
+            tr += Math.max(high - low, Math.max(Math.abs(high - prevClose), Math.abs(low - prevClose)));
+            movement += Math.abs(candles.get(i).close().doubleValue() - prevClose);
+        }
+        return tr == 0 ? 0 : 100 * movement / tr;
+    }
+
     static boolean bullish(List<Candle> c, int end, int fast, int slow) {
-        double f = ema(c, end, fast), s = ema(c, end, slow);
-        double prevF = ema(c, end-1, fast), prevS = ema(c, end-1, slow);
-        return f > s && prevF <= prevS && c.get(end).close().doubleValue() > f;
+        return CrossoverSignalPolicy.decision(c, end, fast == 9 ? StrategyType.DAY : StrategyType.SWING)
+            == CrossoverSignalPolicy.Decision.BUY;
     }
     private static double ema(List<Candle> c, int end, int period) {
         double alpha = 2.0 / (period + 1);

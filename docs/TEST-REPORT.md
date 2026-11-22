@@ -1,0 +1,133 @@
+# Relatório resumido de testes
+
+Data da última execução: 21 de novembro de 2026
+
+Última reexecução após o modo combinado: backend e frontend passaram novamente.
+
+Foi validada a exportação CSV dos trades persistidos através de
+`/research/backtests/{id}/trades.csv`, incluindo teste HTTP do cabeçalho, dados
+do trade e duração.
+
+Foi também validada a configuração de trailing stop por ATR e saída temporal por
+número máximo de candles, aplicada aos modos long e short e desativada por
+defeito para preservar a compatibilidade dos resultados anteriores.
+
+Foi adicionada e validada a fundação do paper broker: livro de ordens in-memory,
+ordens market/limit, fills determinísticos, cash, equity, posições e P&L realizado
+e não realizado. Os testes cobrem compra/venda, fees, fills limit e cancelamento.
+
+Foram adicionadas regras de sizing com notional mínimo/máximo e validação de cash
+no fill. Os testes cobrem limites para ordens limit/market e saldo insuficiente.
+
+Foi adicionado o diário persistente append-only de decisões e sinais, com testes
+de validação, persistência e ausência de operações de alteração/remoção. Os
+endpoints de criação e consulta foram incluídos no contrato do Paper Broker.
+
+Foram adicionados testes HTTP do Paper Broker para conta, ordens, decisões e
+ingestão de candles. Ordens, fills e posições passaram a ser persistidos em
+PostgreSQL, e o endpoint de candles foi validado como ponto de execução de fills.
+
+Foi adicionada recuperação do estado persistido na inicialização do broker,
+incluindo cash, ordens, fills e posições. O teste de reinício valida a
+continuidade dos IDs, saldo e livro de ordens aberto.
+
+Foi integrado o `SignalEngine` com o Paper Broker. Os testes HTTP cobrem o
+endpoint de avaliação; os testes de serviço confirmam que sinais são sempre
+registados e que sinais de entrada elegíveis criam ordens market simuladas.
+
+Foi adicionada a integração PostgreSQL com Testcontainers (`PaperBrokerPostgresIT`)
+para validar recuperação após reinício. Neste ambiente o teste direcionado foi
+skipped porque o socket Docker não está acessível; com Docker disponível, o
+container PostgreSQL é iniciado e a persistência real é exercitada.
+
+Foi adicionada também `RedisKafkaContainersIT`, cobrindo Redis set/get e Kafka
+criação de tópico e round-trip de mensagem. Como o Docker socket continua
+indisponível neste ambiente, estes testes são skipped localmente e ficam prontos
+para execução completa no CI.
+
+Foi adicionada `PaperBrokerInfrastructureIT`, que executa o broker com
+PostgreSQL, Redis e Kafka no mesmo cenário e valida persistência, recuperação,
+estado auxiliar e evento de fill. Sem Docker, o teste fica skipped; com Docker,
+exercita os três containers reais.
+
+Após esta integração, a suite backend normal e a suite frontend foram executadas
+novamente com sucesso; o teste multi-container permanece condicionado à
+disponibilidade do Docker.
+
+Foi aplicada a migração segura `V1__backtest_metrics_defaults.sql` para as novas
+colunas de métricas de `backtest_runs`, usando `IF NOT EXISTS` e `DEFAULT 0`.
+Após reiniciar o backend, os avisos Hibernate de colunas `NOT NULL` sem valor
+desapareceram. O fluxo HTTP do Paper Broker foi verificado novamente: ordem limit,
+fill por candle, cash, equity, posição, P&L e recuperação persistida funcionaram.
+
+As dependências Kafka/Testcontainers foram adicionadas e a suite backend normal
+continua a passar. A integração Redis/Kafka permanece skipped neste ambiente pela
+indisponibilidade do Docker socket; com Docker, `RedisKafkaContainersIT` executa
+Redis set/get e Kafka tópico/publicação/consumo reais.
+
+## Atualização desta execução
+
+Foi validada a funcionalidade `avoidBearishRegime`, que bloqueia novas entradas
+long durante regimes bearish sem abrir posições short nem fechar posições já
+existentes. A configuração foi integrada no endpoint de backtest e no dashboard.
+
+Também foi validado o modo `enableShort=true`, com replay short-only, sizing por
+risco, stop/target ATR, custos, métricas e benchmarks partilhados com o modo
+long-only. O endpoint de backtest e o dashboard aceitam esta configuração.
+
+Foi ainda validado o endpoint `/research/backtest/compare`, que devolve os
+relatórios long-only, short-only e combinado. O combinado usa duas sleeves de
+50% do capital e agrega trades, equity, custos, métricas e benchmarks.
+
+## Backend
+
+Comando executado:
+
+```bash
+cd backend
+mvn -o -Daether.syncContext.named.factory=rwlock-local -q test
+```
+
+Resultado: sucesso.
+
+A suite voltou a passar após a integração do filtro de regime bearish.
+
+A suite inclui testes para:
+
+- sizing e risco por operação;
+- custos, slippage e sweep de fees;
+- execução de stops, targets e gaps;
+- cruzamentos bullish e bearish;
+- replay short-only e seleção HTTP através de `enableShort=true`;
+- comparação HTTP automática entre long-only, short-only e long/short 50/50;
+- configuração e integração dos filtros de tendência, ADX, RSI, volume e distância à EMA;
+- métricas de expectancy, ganhos/perdas médios, duração e perdas consecutivas;
+- benchmarks buy-and-hold e aleatório determinístico;
+- walk-forward train/validation/out-of-sample;
+- integridade temporal e prevenção de look-ahead;
+- endpoints HTTP de backtest, histórico e validação de candles incompletas.
+
+Nota: o Maven pode emitir um aviso do Mockito sobre self-attachment no JDK 27.
+O aviso não causou falhas e a suite terminou com sucesso.
+
+## Frontend
+
+Comandos executados com Node 24 e ambiente npm limpo:
+
+```bash
+cd frontend
+npm test -- --run
+npm run build
+```
+
+Resultado dos testes: 1 ficheiro de testes, 3 testes aprovados.
+
+Resultado do build: TypeScript e Vite concluídos com sucesso. Os artefactos foram
+gerados em `frontend/dist`.
+
+## Ambiente macOS
+
+Quando o ambiente injeta configurações próprias no npm, usar Node 24 e um ambiente
+limpo conforme [`DEVELOPMENT.md`](DEVELOPMENT.md). Isto evita o erro
+`SecItemCopyMatching failed -50` associado ao Keychain/npm do ambiente, sem alterar
+o código da aplicação.
